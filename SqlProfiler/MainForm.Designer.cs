@@ -83,13 +83,15 @@
       this.clearTraceWindowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.deleteSelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.keepSelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.mnAbout = new System.Windows.Forms.ToolStripMenuItem();
       this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.stayOnTopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.transparentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.filterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.filterCapturedEventsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.clearCapturedFiltersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.statusStrip1.SuspendLayout();
       this.toolStrip1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -117,6 +119,7 @@
       // 
       // toolStrip1
       // 
+      this.toolStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
       this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tbClear,
             this.toolStripSeparator5,
@@ -141,7 +144,7 @@
             this.tbTransparent});
       this.toolStrip1.Location = new System.Drawing.Point(0, 24);
       this.toolStrip1.Name = "toolStrip1";
-      this.toolStrip1.Size = new System.Drawing.Size(979, 25);
+      this.toolStrip1.Size = new System.Drawing.Size(979, 31);
       this.toolStrip1.TabIndex = 1;
       this.toolStrip1.Text = "toolStrip1";
       // 
@@ -151,7 +154,7 @@
       this.tbClear.Image = global::SqlProfiler.Properties.Resources.imClear;
       this.tbClear.ImageTransparentColor = System.Drawing.Color.Silver;
       this.tbClear.Name = "tbClear";
-      this.tbClear.Size = new System.Drawing.Size(28, 28);
+      this.tbClear.Size = new System.Drawing.Size(23, 22);
       this.tbClear.Text = "Clear trace";
       this.tbClear.ToolTipText = "Clear trace\r\nCtrl+Shift+Del";
       this.tbClear.Click += new System.EventHandler(this.tbClear_Click);
@@ -159,7 +162,7 @@
       // toolStripSeparator5
       // 
       this.toolStripSeparator5.Name = "toolStripSeparator5";
-      this.toolStripSeparator5.Size = new System.Drawing.Size(6, 31);
+      this.toolStripSeparator5.Size = new System.Drawing.Size(6, 25);
       // 
       // tbScroll
       // 
@@ -170,13 +173,13 @@
       this.tbScroll.Image = global::SqlProfiler.Properties.Resources.imScroll;
       this.tbScroll.ImageTransparentColor = System.Drawing.Color.Transparent;
       this.tbScroll.Name = "tbScroll";
-      this.tbScroll.Size = new System.Drawing.Size(28, 28);
+      this.tbScroll.Size = new System.Drawing.Size(23, 22);
       this.tbScroll.Text = "Auto scroll window";
       // 
       // toolStripSeparator1
       // 
       this.toolStripSeparator1.Name = "toolStripSeparator1";
-      this.toolStripSeparator1.Size = new System.Drawing.Size(6, 31);
+      this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
       // 
       // tbStart
       // 
@@ -187,7 +190,7 @@
       this.tbStart.Image = global::SqlProfiler.Properties.Resources.imStart;
       this.tbStart.ImageTransparentColor = System.Drawing.Color.Transparent;
       this.tbStart.Name = "tbStart";
-      this.tbStart.Size = new System.Drawing.Size(40, 28);
+      this.tbStart.Size = new System.Drawing.Size(32, 22);
       this.tbStart.Text = "Start trace";
       // 
       // tbRun
@@ -211,7 +214,7 @@
       this.tbPause.Image = global::SqlProfiler.Properties.Resources.imPause;
       this.tbPause.ImageTransparentColor = System.Drawing.Color.Transparent;
       this.tbPause.Name = "tbPause";
-      this.tbPause.Size = new System.Drawing.Size(28, 28);
+      this.tbPause.Size = new System.Drawing.Size(23, 22);
       this.tbPause.Text = "Pause trace";
       this.tbPause.Click += new System.EventHandler(this.tbPause_Click);
       // 
@@ -221,14 +224,14 @@
       this.tbStop.Image = global::SqlProfiler.Properties.Resources.imStop;
       this.tbStop.ImageTransparentColor = System.Drawing.Color.Transparent;
       this.tbStop.Name = "tbStop";
-      this.tbStop.Size = new System.Drawing.Size(28, 28);
+      this.tbStop.Size = new System.Drawing.Size(23, 22);
       this.tbStop.Text = "Stop trace";
       this.tbStop.Click += new System.EventHandler(this.tbStop_Click);
       // 
       // toolStripSeparator7
       // 
       this.toolStripSeparator7.Name = "toolStripSeparator7";
-      this.toolStripSeparator7.Size = new System.Drawing.Size(6, 31);
+      this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
       // 
       // tbFilterEvents
       // 
@@ -244,24 +247,24 @@
       // toolStripSeparator2
       // 
       this.toolStripSeparator2.Name = "toolStripSeparator2";
-      this.toolStripSeparator2.Size = new System.Drawing.Size(6, 31);
+      this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
       // 
       // toolStripLabel1
       // 
       this.toolStripLabel1.Name = "toolStripLabel1";
-      this.toolStripLabel1.Size = new System.Drawing.Size(39, 28);
+      this.toolStripLabel1.Size = new System.Drawing.Size(39, 22);
       this.toolStripLabel1.Text = "Server";
       // 
       // edServer
       // 
       this.edServer.Name = "edServer";
-      this.edServer.Size = new System.Drawing.Size(100, 31);
+      this.edServer.Size = new System.Drawing.Size(100, 25);
       this.edServer.TextChanged += new System.EventHandler(this.edServer_TextChanged);
       // 
       // toolStripSeparator4
       // 
       this.toolStripSeparator4.Name = "toolStripSeparator4";
-      this.toolStripSeparator4.Size = new System.Drawing.Size(6, 31);
+      this.toolStripSeparator4.Size = new System.Drawing.Size(6, 25);
       // 
       // tbAuth
       // 
@@ -270,36 +273,36 @@
             "Windows auth",
             "SQL Server auth"});
       this.tbAuth.Name = "tbAuth";
-      this.tbAuth.Size = new System.Drawing.Size(121, 31);
+      this.tbAuth.Size = new System.Drawing.Size(121, 25);
       this.tbAuth.SelectedIndexChanged += new System.EventHandler(this.tbAuth_SelectedIndexChanged);
       // 
       // toolStripLabel2
       // 
       this.toolStripLabel2.Name = "toolStripLabel2";
-      this.toolStripLabel2.Size = new System.Drawing.Size(30, 28);
+      this.toolStripLabel2.Size = new System.Drawing.Size(30, 22);
       this.toolStripLabel2.Text = "User";
       // 
       // edUser
       // 
       this.edUser.Name = "edUser";
-      this.edUser.Size = new System.Drawing.Size(100, 31);
+      this.edUser.Size = new System.Drawing.Size(100, 25);
       this.edUser.TextChanged += new System.EventHandler(this.edUser_TextChanged);
       // 
       // toolStripLabel3
       // 
       this.toolStripLabel3.Name = "toolStripLabel3";
-      this.toolStripLabel3.Size = new System.Drawing.Size(57, 28);
+      this.toolStripLabel3.Size = new System.Drawing.Size(57, 22);
       this.toolStripLabel3.Text = "Password";
       // 
       // edPassword
       // 
       this.edPassword.Name = "edPassword";
-      this.edPassword.Size = new System.Drawing.Size(100, 31);
+      this.edPassword.Size = new System.Drawing.Size(100, 25);
       // 
       // toolStripSeparator3
       // 
       this.toolStripSeparator3.Name = "toolStripSeparator3";
-      this.toolStripSeparator3.Size = new System.Drawing.Size(6, 31);
+      this.toolStripSeparator3.Size = new System.Drawing.Size(6, 25);
       // 
       // tbStayOnTop
       // 
@@ -308,7 +311,7 @@
       this.tbStayOnTop.Image = ((System.Drawing.Image)(resources.GetObject("tbStayOnTop.Image")));
       this.tbStayOnTop.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.tbStayOnTop.Name = "tbStayOnTop";
-      this.tbStayOnTop.Size = new System.Drawing.Size(23, 22);
+      this.tbStayOnTop.Size = new System.Drawing.Size(28, 28);
       this.tbStayOnTop.Text = "Stay on top";
       this.tbStayOnTop.Click += new System.EventHandler(this.tbStayOnTop_Click);
       // 
@@ -319,22 +322,22 @@
       this.tbTransparent.Image = ((System.Drawing.Image)(resources.GetObject("tbTransparent.Image")));
       this.tbTransparent.ImageTransparentColor = System.Drawing.Color.Magenta;
       this.tbTransparent.Name = "tbTransparent";
-      this.tbTransparent.Size = new System.Drawing.Size(28, 28);
+      this.tbTransparent.Size = new System.Drawing.Size(23, 22);
       this.tbTransparent.Text = "Transparent";
       this.tbTransparent.Click += new System.EventHandler(this.toolStripButton1_Click);
       // 
       // splitContainer1
       // 
       this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-      this.splitContainer1.Location = new System.Drawing.Point(0, 49);
+      this.splitContainer1.Location = new System.Drawing.Point(0, 55);
       this.splitContainer1.Name = "splitContainer1";
       this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
       // 
       // splitContainer1.Panel2
       // 
       this.splitContainer1.Panel2.Controls.Add(this.reTextData);
-      this.splitContainer1.Size = new System.Drawing.Size(979, 439);
-      this.splitContainer1.SplitterDistance = 279;
+      this.splitContainer1.Size = new System.Drawing.Size(979, 433);
+      this.splitContainer1.SplitterDistance = 275;
       this.splitContainer1.TabIndex = 4;
       // 
       // reTextData
@@ -344,7 +347,7 @@
       this.reTextData.Location = new System.Drawing.Point(0, 0);
       this.reTextData.Name = "reTextData";
       this.reTextData.ReadOnly = true;
-      this.reTextData.Size = new System.Drawing.Size(979, 156);
+      this.reTextData.Size = new System.Drawing.Size(979, 154);
       this.reTextData.TabIndex = 4;
       this.reTextData.Text = "";
       // 
@@ -396,9 +399,9 @@
       this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
             this.editToolStripMenuItem,
-            this.mnAbout,
             this.viewToolStripMenuItem,
-            this.filterToolStripMenuItem});
+            this.filterToolStripMenuItem,
+            this.helpToolStripMenuItem});
       this.menuStrip1.Location = new System.Drawing.Point(0, 0);
       this.menuStrip1.Name = "menuStrip1";
       this.menuStrip1.Padding = new System.Windows.Forms.Padding(4, 1, 0, 1);
@@ -587,14 +590,6 @@
       this.keepSelectedToolStripMenuItem.Text = "Keep selected";
       this.keepSelectedToolStripMenuItem.Click += new System.EventHandler(this.keepSelectedToolStripMenuItem_Click);
       // 
-      // mnAbout
-      // 
-      this.mnAbout.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-      this.mnAbout.Name = "mnAbout";
-      this.mnAbout.Size = new System.Drawing.Size(52, 22);
-      this.mnAbout.Text = "About";
-      this.mnAbout.Click += new System.EventHandler(this.mnAbout_Click);
-      // 
       // viewToolStripMenuItem
       // 
       this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -642,6 +637,29 @@
       this.clearCapturedFiltersToolStripMenuItem.Size = new System.Drawing.Size(189, 22);
       this.clearCapturedFiltersToolStripMenuItem.Text = "Clear Captured Filters";
       this.clearCapturedFiltersToolStripMenuItem.Click += new System.EventHandler(this.clearCapturedFiltersToolStripMenuItem_Click);
+      // 
+      // helpToolStripMenuItem
+      // 
+      this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.checkForUpdatesToolStripMenuItem,
+            this.aboutToolStripMenuItem});
+      this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
+      this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 22);
+      this.helpToolStripMenuItem.Text = "Help";
+      // 
+      // checkForUpdatesToolStripMenuItem
+      // 
+      this.checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
+      this.checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+      this.checkForUpdatesToolStripMenuItem.Text = "Check for updates";
+      this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
+      // 
+      // aboutToolStripMenuItem
+      // 
+      this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
+      this.aboutToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+      this.aboutToolStripMenuItem.Text = "About";
+      this.aboutToolStripMenuItem.Click += new System.EventHandler(this.mnAbout_Click);
       // 
       // MainForm
       // 
@@ -722,7 +740,6 @@
 		private System.Windows.Forms.ToolStripStatusLabel slEPS;
 		private System.Windows.Forms.ToolStripMenuItem copyToXlsToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
-		private System.Windows.Forms.ToolStripMenuItem mnAbout;
 		private System.Windows.Forms.ToolStripMenuItem copyAllForExcelToolStripMenuItem;
 		private System.Windows.Forms.ToolStripButton tbStayOnTop;
 		private System.Windows.Forms.ToolStripButton tbTransparent;
@@ -738,5 +755,8 @@
 		private System.Windows.Forms.ToolStripMenuItem saveAllEventsToExcelXmlFileToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
 		private System.Windows.Forms.ToolStripButton tbFilterEvents;
-	}
+    private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+  }
 }

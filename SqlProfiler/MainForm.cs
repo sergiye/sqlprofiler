@@ -1521,6 +1521,10 @@ namespace SqlProfiler {
       ClearFilterEvents();
     }
 
+    private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e) {
+      Updater.CheckForUpdates(false);
+    }
+
     private void tbFilterEvents_Click(object sender, EventArgs e) {
       ToolStripButton filterButton = (ToolStripButton) sender;
       if (filterButton.Checked) {
