@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -47,9 +48,6 @@ namespace SqlProfiler {
     private readonly List<ListViewItem> m_Cached = new List<ListViewItem>(1024);
     private readonly List<ListViewItem> m_CachedUnFiltered = new List<ListViewItem>(1024);
     private readonly Dictionary<string, ListViewItem> m_itembysql = new Dictionary<string, ListViewItem>();
-    private string m_servername = "";
-    private string m_username = "";
-    private string m_userpassword = "";
     internal int lastpos = -1;
     internal string lastpattern = "";
     private ListViewNF lvEvents;
@@ -71,19 +69,45 @@ namespace SqlProfiler {
       Text = $"SqlProfiler {(Environment.Is64BitProcess ? "x64" : "x32")} - {Updater.CurrentVersion}";
       StartPosition = FormStartPosition.CenterScreen;
       edPassword.TextBox.PasswordChar = '*';
+
       m_currentsettings = TraceProperties.TraceSettings.GetDefaultSettings();
-      m_servername = ".";
-      m_username = "sa";
       ParseCommandLine();
       InitLV();
-      edServer.Text = m_servername;
-      edUser.Text = m_username;
-      edPassword.Text = m_userpassword;
-      tbAuth.SelectedIndex = String.IsNullOrEmpty(m_username) ? 0 : 1;
+      edServer.Text = Config.Instance.Server;
+      edUser.Text = Config.Instance.User;
+      edPassword.Text = Config.Instance.Password;
+      tbAuth.SelectedIndex = String.IsNullOrEmpty(Config.Instance.User) ? 0 : 1;
       if (m_autostart) RunProfiling(false);
       UpdateButtons();
+
+      MinimumSize = new Size(1100, 666);
+      
+      Load += (sender, args) => {
+        Left = Config.Instance.Left;
+        Top = Config.Instance.Top;
+        Height = Config.Instance.Height;
+        Width = Config.Instance.Width;
+      };
+
+      Closing += (sender, args) => {
+        Config.Instance.Left = Left;
+        Config.Instance.Top = Top;
+        Config.Instance.Height = Height;
+        Config.Instance.Width = Width;
+        
+        Config.Instance.Save();
+      };
     }
 
+    public sealed override Size MinimumSize {
+      get { return base.MinimumSize; }
+      set { base.MinimumSize = value; }
+    }
+
+    private string GetConfigFilePath() {
+      return Path.ChangeExtension(Updater.CurrentFileLocation, ".json");
+    }
+    
 //DatabaseName = Filters.DatabaseName,
 //LoginName = Filters.LoginName,
 //HostName = Filters.HostName,
@@ -149,17 +173,17 @@ namespace SqlProfiler {
           switch (args[i].ToLower()) {
             case "-s":
             case "-server":
-              m_servername = ep;
+              Config.Instance.Server = ep;
               i++;
               break;
             case "-u":
             case "-user":
-              m_username = ep;
+              Config.Instance.User = ep;
               i++;
               break;
             case "-p":
             case "-password":
-              m_userpassword = ep;
+              Config.Instance.Password = ep;
               i++;
               break;
             case "-m":
@@ -212,8 +236,8 @@ namespace SqlProfiler {
           i++;
         }
 
-        if (m_servername.Length == 0) {
-          m_servername = @".\sqlexpress";
+        if (Config.Instance.Server.Length == 0) {
+          Config.Instance.Server = @".\sqlexpress";
         }
       }
       catch (Exception e) {
@@ -253,7 +277,6 @@ namespace SqlProfiler {
       edPassword.Enabled = edServer.Enabled && (tbAuth.SelectedIndex == 1);
     }
 
-
     private void InitLV() {
       lvEvents = new ListViewNF {
         Dock = DockStyle.Fill,
@@ -272,7 +295,6 @@ namespace SqlProfiler {
         AllowColumnReorder = false
       };
       lvEvents.RetrieveVirtualItem += lvEvents_RetrieveVirtualItem;
-      lvEvents.KeyDown += lvEvents_KeyDown;
       lvEvents.ItemSelectionChanged += listView1_ItemSelectionChanged_1;
       lvEvents.ColumnClick += lvEvents_ColumnClick;
       lvEvents.SelectedIndexChanged += lvEvents_SelectedIndexChanged;
@@ -688,8 +710,8 @@ namespace SqlProfiler {
         m_itembysql.Clear();
         lvEvents.VirtualListSize = 0;
         StartProfilerThread();
-        m_servername = edServer.Text;
-        m_username = edUser.Text;
+        Config.Instance.Server = edServer.Text;
+        Config.Instance.User = edUser.Text;
       }
       catch (Exception e) {
         MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -815,7 +837,6 @@ namespace SqlProfiler {
       UpdateButtons();
     }
 
-
     internal void SelectAllEvents(bool select) {
       lock (m_Cached) {
         lvEvents.BeginUpdate();
@@ -832,13 +853,6 @@ namespace SqlProfiler {
         }
       }
     }
-
-    private void lvEvents_KeyDown(object sender, KeyEventArgs e) {
-    }
-
-    private void MainForm_Load(object sender, EventArgs e) {
-    }
-
 
     private void timer1_Tick(object sender, EventArgs e) {
       Queue<ProfilerEvent> saved;
@@ -988,7 +1002,6 @@ namespace SqlProfiler {
       CopyEventsToClipboard(true);
     }
 
-
     private void pauseTraceToolStripMenuItem_Click(object sender, EventArgs e) {
       PauseProfiling();
     }
@@ -1050,7 +1063,6 @@ namespace SqlProfiler {
     //    MessageBox.Show(String.Format("Failed to find \"{0}\". Searched to the end of data. ", lastpattern), "SqlProfiler", MessageBoxButtons.OK, MessageBoxIcon.Information);
     //}
 
-
     internal void PerformFind(bool forwards, bool wrapAround) {
       if (String.IsNullOrEmpty(lastpattern)) return;
       int lastpos = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
@@ -1089,7 +1101,6 @@ namespace SqlProfiler {
         "SqlProfiler", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
-
     private void ShowSelectedEvent() {
       int focusedIndex = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
       if ((focusedIndex > -1) && (focusedIndex < m_Cached.Count)) {
@@ -1102,7 +1113,6 @@ namespace SqlProfiler {
         FocusLVI(lvi, true);
       }
     }
-
 
     private bool FindText(int i) {
       ListViewItem lvi = m_Cached[i];
@@ -1320,7 +1330,6 @@ namespace SqlProfiler {
       lvEvents.SelectedIndices.Clear();
     }
 
-
     private void SaveToExcelXmlFile() {
       XmlDocument doc = new XmlDocument();
       XmlProcessingInstruction pi = doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'");
@@ -1450,7 +1459,6 @@ namespace SqlProfiler {
       }
     }
 
-
     private void SetFilterEvents() {
       if (m_CachedUnFiltered.Count == 0) {
         lvEvents.SelectedIndices.Clear();
@@ -1475,7 +1483,6 @@ namespace SqlProfiler {
       }
     }
 
-
     private void ClearFilterEvents() {
       if (m_CachedUnFiltered.Count > 0) {
         m_Cached.Clear();
@@ -1488,30 +1495,21 @@ namespace SqlProfiler {
       }
     }
 
-
     private void saveAllEventsToExcelXmlFileToolStripMenuItem_Click(object sender, EventArgs e) {
       SaveToExcelXmlFile();
     }
 
-    /// <summary>
-    /// Persist the server string when it changes.
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private void edServer_TextChanged(object sender, EventArgs e) {
-      m_servername = edServer.Text;
+      Config.Instance.Server = edServer.Text;
     }
 
-
-    /// <summary>
-    /// Persist the user name string when it changes.
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
     private void edUser_TextChanged(object sender, EventArgs e) {
-      m_username = edUser.Text;
+      Config.Instance.User = edUser.Text;
     }
 
+    private void edPassword_TextChanged(object sender, EventArgs e) {
+      Config.Instance.Password = edPassword.Text;
+    }
 
     private void filterCapturedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
       SetFilterEvents();

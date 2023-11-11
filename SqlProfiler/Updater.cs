@@ -69,6 +69,11 @@ namespace SqlProfiler {
       return serializer.Deserialize<T>(json);
     }
 
+    internal static string ToJson(this object value) {
+      var serializer = new JavaScriptSerializer();
+      return serializer.Serialize(value);
+    }
+
     internal static void CheckForUpdates(bool silent) {
       string newVersion;
       string newVersionUrl = null;

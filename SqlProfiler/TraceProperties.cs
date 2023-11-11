@@ -81,7 +81,13 @@ namespace SqlProfiler {
         BatchCompleted = true,
         RPCCompleted = true,
         StartTime = true,
-        EndTime = true
+        EndTime = true,
+#if DEBUG
+        ApplicationName = true,
+        DatabaseName = true,
+        HostName = true,
+        ObjectName = true,
+#endif
       };
       
       public TraceFilters Filters = new TraceFilters {

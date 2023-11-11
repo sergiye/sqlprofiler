@@ -53,6 +53,7 @@
         <Reference Include="System.Xml"/>
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Config.cs" />
         <Compile Include="ListViewExtensions.cs"/>
         <Compile Include="TextDataComparer.cs"/>
         <Compile Include="EventList.cs"/>

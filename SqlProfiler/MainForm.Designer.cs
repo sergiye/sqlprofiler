@@ -298,6 +298,7 @@
       // 
       this.edPassword.Name = "edPassword";
       this.edPassword.Size = new System.Drawing.Size(100, 25);
+      this.edPassword.TextChanged += new System.EventHandler(this.edPassword_TextChanged);
       // 
       // toolStripSeparator3
       // 
@@ -674,7 +675,6 @@
       this.Name = "MainForm";
       this.Text = "SqlProfiler v1.0";
       this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-      this.Load += new System.EventHandler(this.MainForm_Load);
       this.statusStrip1.ResumeLayout(false);
       this.statusStrip1.PerformLayout();
       this.toolStrip1.ResumeLayout(false);
