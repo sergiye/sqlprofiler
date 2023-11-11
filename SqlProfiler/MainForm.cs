@@ -37,7 +37,6 @@ namespace SqlProfiler {
 
     private readonly YukonLexer m_Lex = new YukonLexer();
     private SqlConnection m_Conn;
-    private readonly SqlCommand m_Cmd = new SqlCommand();
     private Thread m_Thr;
     private bool m_NeedStop = true;
     private ProfilingStateEnum m_ProfilingState;
@@ -76,7 +75,7 @@ namespace SqlProfiler {
       edServer.Text = Config.Instance.Server;
       edUser.Text = Config.Instance.User;
       edPassword.Text = Config.Instance.Password;
-      tbAuth.SelectedIndex = String.IsNullOrEmpty(Config.Instance.User) ? 0 : 1;
+      tbAuth.SelectedIndex = string.IsNullOrEmpty(Config.Instance.User) ? 0 : 1;
       if (m_autostart) RunProfiling(false);
       UpdateButtons();
 
@@ -114,28 +113,28 @@ namespace SqlProfiler {
 //TextData = Filters.TextData,
 //ApplicationName = Filters.ApplicationName,
     private bool ParseFilterParam(string[] args, int idx) {
-      string condition = idx + 1 < args.Length ? args[idx + 1] : "";
-      string value = idx + 2 < args.Length ? args[idx + 2] : "";
+      var condition = idx + 1 < args.Length ? args[idx + 1] : "";
+      var value = idx + 2 < args.Length ? args[idx + 2] : "";
 
       switch (args[idx].ToLower()) {
         case "-cpu":
-          m_currentsettings.Filters.CPU = Int32.Parse(value);
+          m_currentsettings.Filters.CPU = int.Parse(value);
           m_currentsettings.Filters.CpuFilterCondition = TraceProperties.ParseIntCondition(condition);
           break;
         case "-duration":
-          m_currentsettings.Filters.Duration = Int32.Parse(value);
+          m_currentsettings.Filters.Duration = int.Parse(value);
           m_currentsettings.Filters.DurationFilterCondition = TraceProperties.ParseIntCondition(condition);
           break;
         case "-reads":
-          m_currentsettings.Filters.Reads = Int32.Parse(value);
+          m_currentsettings.Filters.Reads = int.Parse(value);
           m_currentsettings.Filters.ReadsFilterCondition = TraceProperties.ParseIntCondition(condition);
           break;
         case "-writes":
-          m_currentsettings.Filters.Writes = Int32.Parse(value);
+          m_currentsettings.Filters.Writes = int.Parse(value);
           m_currentsettings.Filters.WritesFilterCondition = TraceProperties.ParseIntCondition(condition);
           break;
         case "-spid":
-          m_currentsettings.Filters.SPID = Int32.Parse(value);
+          m_currentsettings.Filters.SPID = int.Parse(value);
           m_currentsettings.Filters.SPIDFilterCondition = TraceProperties.ParseIntCondition(condition);
           break;
 
@@ -166,10 +165,10 @@ namespace SqlProfiler {
 
     private void ParseCommandLine() {
       try {
-        string[] args = Environment.GetCommandLineArgs();
-        int i = 1;
+        var args = Environment.GetCommandLineArgs();
+        var i = 1;
         while (i < args.Length) {
-          string ep = i + 1 < args.Length ? args[i + 1] : "";
+          var ep = i + 1 < args.Length ? args[i + 1] : "";
           switch (args[i].ToLower()) {
             case "-s":
             case "-server":
@@ -189,13 +188,13 @@ namespace SqlProfiler {
             case "-m":
             case "-maxevents":
               int m;
-              if (!Int32.TryParse(ep, out m)) m = 1000;
+              if (!int.TryParse(ep, out m)) m = 1000;
               m_currentsettings.Filters.MaximumEventCount = m;
               break;
             case "-d":
             case "-duration":
               int d;
-              if (Int32.TryParse(ep, out d)) {
+              if (int.TryParse(ep, out d)) {
                 m_currentsettings.Filters.DurationFilterCondition = TraceProperties.IntFilterCondition.GreaterThan;
                 m_currentsettings.Filters.Duration = d;
               }
@@ -357,7 +356,7 @@ namespace SqlProfiler {
       lvEvents.BeginUpdate();
       try {
         lvEvents.Columns.Clear();
-        foreach (PerfColumn pc in m_columns) {
+        foreach (var pc in m_columns) {
           var l = lvEvents.Columns.Add(pc.Caption, pc.Width);
           l.TextAlign = pc.Alignment;
         }
@@ -379,7 +378,7 @@ namespace SqlProfiler {
     void lvEvents_ColumnClick(object sender, ColumnClickEventArgs e) {
       lvEvents.ToggleSortOrder();
       lvEvents.SetSortIcon(e.Column, lvEvents.SortOrder);
-      TextDataComparer comparer = new TextDataComparer(e.Column, lvEvents.SortOrder);
+      var comparer = new TextDataComparer(e.Column, lvEvents.SortOrder);
       m_Cached.Sort(comparer);
       UpdateSourceBox();
       ShowSelectedEvent();
@@ -409,13 +408,13 @@ namespace SqlProfiler {
 
     private void NewEventArrived(ProfilerEvent evt, bool last) {
       {
-        ListViewItem current = (lvEvents.SelectedIndices.Count > 0) ? m_Cached[lvEvents.SelectedIndices[0]] : null;
+        var current = (lvEvents.SelectedIndices.Count > 0) ? m_Cached[lvEvents.SelectedIndices[0]] : null;
         m_EventCount++;
-        string caption = GetEventCaption(evt);
-        ListViewItem lvi = new ListViewItem(caption);
-        string[] items = new string[m_columns.Count];
-        for (int i = 1; i < m_columns.Count; i++) {
-          PerfColumn pc = m_columns[i];
+        var caption = GetEventCaption(evt);
+        var lvi = new ListViewItem(caption);
+        var items = new string[m_columns.Count];
+        for (var i = 1; i < m_columns.Count; i++) {
+          var pc = m_columns[i];
           items[i - 1] = pc.Column == -1
             ? m_EventCount.ToString("#,0")
             : GetFormattedValue(evt, pc.Column, pc.Format) ?? "";
@@ -444,10 +443,10 @@ namespace SqlProfiler {
       }
     }
 
-    private void ProfilerThread(Object state) {
+    private void ProfilerThread(object state) {
       try {
         while (!m_NeedStop && m_Rdr.TraceIsActive) {
-          ProfilerEvent evt = m_Rdr.Next();
+          var evt = m_Rdr.Next();
           if (evt != null) {
             lock (this) {
               m_events.Enqueue(evt);
@@ -468,10 +467,10 @@ namespace SqlProfiler {
       return new SqlConnection {
         ConnectionString =
           tbAuth.SelectedIndex == 0
-            ? String.Format(
+            ? string.Format(
               @"Data Source = {0}; Initial Catalog = master; Integrated Security=SSPI;Application Name=SqlProfiler",
               edServer.Text)
-            : String.Format(
+            : string.Format(
               @"Data Source={0};Initial Catalog=master;User Id={1};Password='{2}';;Application Name=SqlProfiler",
               edServer.Text, edUser.Text, edPassword.Text)
       };
@@ -701,8 +700,6 @@ namespace SqlProfiler {
           m_currentsettings.Filters.ApplicationNameFilterCondition, ProfilerEventColumns.ApplicationName);
 
 
-        m_Cmd.Connection = m_Conn;
-        m_Cmd.CommandTimeout = 0;
         m_Rdr.SetFilter(ProfilerEventColumns.ApplicationName, LogicalOperators.AND, ComparisonOperators.NotLike,
           "SqlProfiler");
         m_Cached.Clear();
@@ -710,8 +707,6 @@ namespace SqlProfiler {
         m_itembysql.Clear();
         lvEvents.VirtualListSize = 0;
         StartProfilerThread();
-        Config.Instance.Server = edServer.Text;
-        Config.Instance.User = edUser.Text;
       }
       catch (Exception e) {
         MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -723,7 +718,7 @@ namespace SqlProfiler {
     }
 
     private void SetIntFilter(int? value, TraceProperties.IntFilterCondition condition, int column) {
-      int[] com = new[] {
+      var com = new[] {
         ComparisonOperators.Equal, ComparisonOperators.NotEqual, ComparisonOperators.GreaterThan,
         ComparisonOperators.LessThan
       };
@@ -734,7 +729,7 @@ namespace SqlProfiler {
     }
 
     private void SetStringFilter(string value, TraceProperties.StringFilterCondition condition, int column) {
-      if (!String.IsNullOrEmpty(value)) {
+      if (!string.IsNullOrEmpty(value)) {
         m_Rdr.SetFilter(column, LogicalOperators.AND
           , condition == TraceProperties.StringFilterCondition.Like
             ? ComparisonOperators.Like
@@ -745,10 +740,7 @@ namespace SqlProfiler {
     }
 
     private void StartProfilerThread() {
-      if (m_Rdr != null) {
-        m_Rdr.Close();
-      }
-
+      m_Rdr.Close();
       m_Rdr.StartTrace();
       m_Thr = new Thread(ProfilerThread) {IsBackground = true, Priority = ThreadPriority.Lowest};
       m_NeedStop = false;
@@ -768,7 +760,7 @@ namespace SqlProfiler {
 
     private void StopProfiling() {
       tbStop.Enabled = false;
-      using (SqlConnection cn = GetConnection()) {
+      using (var cn = GetConnection()) {
         cn.Open();
         m_Rdr.StopTrace(cn);
         m_Rdr.CloseTrace(cn);
@@ -792,10 +784,10 @@ namespace SqlProfiler {
 
     private void UpdateSourceBox() {
       if (dontUpdateSource) return;
-      StringBuilder sb = new StringBuilder();
+      var sb = new StringBuilder();
 
       foreach (int i in lvEvents.SelectedIndices) {
-        ListViewItem lv = m_Cached[i];
+        var lv = m_Cached[i];
         if (lv.SubItems[1].Text != "") {
           sb.AppendFormat("{0}\r\ngo\r\n", lv.SubItems[1].Text);
         }
@@ -826,7 +818,7 @@ namespace SqlProfiler {
     }
 
     private void PauseProfiling() {
-      using (SqlConnection cn = GetConnection()) {
+      using (var cn = GetConnection()) {
         cn.Open();
         m_Rdr.StopTrace(cn);
         cn.Close();
@@ -842,7 +834,7 @@ namespace SqlProfiler {
         lvEvents.BeginUpdate();
         dontUpdateSource = true;
         try {
-          foreach (ListViewItem lv in m_Cached) {
+          foreach (var lv in m_Cached) {
             lv.Selected = select;
           }
         }
@@ -865,7 +857,7 @@ namespace SqlProfiler {
       }
 
       if (null != exc) {
-        using (ThreadExceptionDialog dlg = new ThreadExceptionDialog(exc)) {
+        using (var dlg = new ThreadExceptionDialog(exc)) {
           dlg.ShowDialog();
         }
       }
@@ -885,7 +877,7 @@ namespace SqlProfiler {
         }
 
         if ((null == m_prev) || (DateTime.Now.Subtract(m_prev.m_date).TotalSeconds >= 1)) {
-          PerfInfo curr = new PerfInfo {m_count = m_EventCount};
+          var curr = new PerfInfo {m_count = m_EventCount};
           if (m_perf.Count >= 60) {
             m_first = m_perf.Dequeue();
           }
@@ -893,10 +885,10 @@ namespace SqlProfiler {
           if (null == m_first) m_first = curr;
           if (null == m_prev) m_prev = curr;
 
-          DateTime now = DateTime.Now;
-          double d1 = now.Subtract(m_prev.m_date).TotalSeconds;
-          double d2 = now.Subtract(m_first.m_date).TotalSeconds;
-          slEPS.Text = String.Format("{0} / {1} EPS(last/avg for {2} second(s))",
+          var now = DateTime.Now;
+          var d1 = now.Subtract(m_prev.m_date).TotalSeconds;
+          var d2 = now.Subtract(m_first.m_date).TotalSeconds;
+          slEPS.Text = string.Format("{0} / {1} EPS(last/avg for {2} second(s))",
             (Math.Abs(d1 - 0) > 0.001 ? ((curr.m_count - m_prev.m_count) / d1).ToString("#,0.00") : ""),
             (Math.Abs(d2 - 0) > 0.001 ? ((curr.m_count - m_first.m_count) / d2).ToString("#,0.00") : ""),
             d2.ToString("0"));
@@ -926,13 +918,13 @@ namespace SqlProfiler {
     }
 
     private void NewAttribute(XmlNode node, string name, string value) {
-      XmlAttribute attr = node.OwnerDocument.CreateAttribute(name);
+      var attr = node.OwnerDocument.CreateAttribute(name);
       attr.Value = value;
       node.Attributes.Append(attr);
     }
 
     private void NewAttribute(XmlNode node, string name, string value, string namespaceURI) {
-      XmlAttribute attr = node.OwnerDocument.CreateAttribute("ss", name, namespaceURI);
+      var attr = node.OwnerDocument.CreateAttribute("ss", name, namespaceURI);
       attr.Value = value;
       node.Attributes.Append(attr);
     }
@@ -942,7 +934,7 @@ namespace SqlProfiler {
     }
 
     private void CopyEventsToClipboard(bool copySelected) {
-      XmlDocument doc = new XmlDocument();
+      var doc = new XmlDocument();
       XmlNode root = doc.CreateElement("events");
       lock (m_Cached) {
         if (copySelected) {
@@ -959,8 +951,8 @@ namespace SqlProfiler {
 
       doc.AppendChild(root);
       doc.PreserveWhitespace = true;
-      using (StringWriter writer = new StringWriter()) {
-        XmlTextWriter textWriter = new XmlTextWriter(writer) {Formatting = Formatting.Indented};
+      using (var writer = new StringWriter()) {
+        var textWriter = new XmlTextWriter(writer) {Formatting = Formatting.Indented};
         doc.Save(textWriter);
         Clipboard.SetText(writer.ToString());
       }
@@ -1021,7 +1013,7 @@ namespace SqlProfiler {
         return;
       }
 
-      using (FindForm f = new FindForm(this)) {
+      using (var f = new FindForm(this)) {
         f.TopMost = this.TopMost;
         f.ShowDialog();
       }
@@ -1064,17 +1056,17 @@ namespace SqlProfiler {
     //}
 
     internal void PerformFind(bool forwards, bool wrapAround) {
-      if (String.IsNullOrEmpty(lastpattern)) return;
-      int lastpos = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
+      if (string.IsNullOrEmpty(lastpattern)) return;
+      var lastpos = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
       if (forwards) {
-        for (int i = lastpos + 1; i < m_Cached.Count; i++) {
+        for (var i = lastpos + 1; i < m_Cached.Count; i++) {
           if (FindText(i)) {
             return;
           }
         }
 
         if (wrapAround) {
-          for (int i = 0; i < lastpos; i++) {
+          for (var i = 0; i < lastpos; i++) {
             if (FindText(i)) {
               return;
             }
@@ -1082,14 +1074,14 @@ namespace SqlProfiler {
         }
       }
       else {
-        for (int i = lastpos - 1; i > 0; i--) {
+        for (var i = lastpos - 1; i > 0; i--) {
           if (FindText(i)) {
             return;
           }
         }
 
         if (wrapAround) {
-          for (int i = m_Cached.Count; i > lastpos; i--) {
+          for (var i = m_Cached.Count; i > lastpos; i--) {
             if (FindText(i)) {
               return;
             }
@@ -1097,15 +1089,15 @@ namespace SqlProfiler {
         }
       }
 
-      MessageBox.Show(String.Format("Failed to find \"{0}\". Searched to the end of data. ", lastpattern),
+      MessageBox.Show(string.Format("Failed to find \"{0}\". Searched to the end of data. ", lastpattern),
         "SqlProfiler", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void ShowSelectedEvent() {
-      int focusedIndex = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
+      var focusedIndex = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
       if ((focusedIndex > -1) && (focusedIndex < m_Cached.Count)) {
-        ListViewItem lvi = m_Cached[focusedIndex];
-        ProfilerEvent evt = (ProfilerEvent) lvi.Tag;
+        var lvi = m_Cached[focusedIndex];
+        var evt = (ProfilerEvent) lvi.Tag;
 
         lvi.Focused = true;
         lastpos = focusedIndex;
@@ -1115,9 +1107,9 @@ namespace SqlProfiler {
     }
 
     private bool FindText(int i) {
-      ListViewItem lvi = m_Cached[i];
-      ProfilerEvent evt = (ProfilerEvent) lvi.Tag;
-      string pattern = (wholeWord ? "\\b" + lastpattern + "\\b" : lastpattern);
+      var lvi = m_Cached[i];
+      var evt = (ProfilerEvent) lvi.Tag;
+      var pattern = (wholeWord ? "\\b" + lastpattern + "\\b" : lastpattern);
       if (Regex.IsMatch(evt.TextData, pattern, (matchCase ? RegexOptions.None : RegexOptions.IgnoreCase))) {
         lvi.Focused = true;
         lastpos = i;
@@ -1145,8 +1137,8 @@ namespace SqlProfiler {
 
     internal void RunProfiling(bool showfilters) {
       if (showfilters) {
-        TraceProperties.TraceSettings ts = m_currentsettings.GetCopy();
-        using (TraceProperties frm = new TraceProperties()) {
+        var ts = m_currentsettings.GetCopy();
+        using (var frm = new TraceProperties()) {
           frm.SetSettings(ts);
           if (DialogResult.OK != frm.ShowDialog()) return;
           m_currentsettings = frm.m_currentsettings.GetCopy();
@@ -1165,8 +1157,8 @@ namespace SqlProfiler {
     }
 
     private void CopyForExcel() {
-      XmlDocument doc = new XmlDocument();
-      XmlProcessingInstruction pi = doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'");
+      var doc = new XmlDocument();
+      var pi = doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'");
       doc.AppendChild(pi);
       const string urn = "urn:schemas-microsoft-com:office:spreadsheet";
       XmlNode root = doc.CreateElement("ss", "Workbook", urn);
@@ -1211,11 +1203,11 @@ namespace SqlProfiler {
 
       lock (m_Cached) {
         long rowNumber = 1;
-        foreach (ListViewItem lvi in m_Cached) {
+        foreach (var lvi in m_Cached) {
           row = doc.CreateElement("ss", "Row", urn);
           table.AppendChild(row);
-          for (int i = 0; i < m_columns.Count; i++) {
-            PerfColumn pc = m_columns[i];
+          for (var i = 0; i < m_columns.Count; i++) {
+            var pc = m_columns[i];
             if (pc.Column != -1) {
               XmlNode cell = doc.CreateElement("ss", "Cell", urn);
               row.AppendChild(cell);
@@ -1266,11 +1258,11 @@ namespace SqlProfiler {
         }
       }
 
-      using (StringWriter writer = new StringWriter()) {
-        XmlTextWriter textWriter = new XmlTextWriter(writer) {Formatting = Formatting.Indented, Namespaces = true};
+      using (var writer = new StringWriter()) {
+        var textWriter = new XmlTextWriter(writer) {Formatting = Formatting.Indented, Namespaces = true};
         doc.Save(textWriter);
-        string xml = writer.ToString();
-        MemoryStream xmlStream = new MemoryStream();
+        var xml = writer.ToString();
+        var xmlStream = new MemoryStream();
         xmlStream.Write(System.Text.Encoding.UTF8.GetBytes(xml), 0, xml.Length);
         Clipboard.SetData("XML Spreadsheet", xmlStream);
       }
@@ -1311,7 +1303,7 @@ namespace SqlProfiler {
     }
 
     private void deleteSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
-      for (int i = lvEvents.SelectedIndices.Count - 1; i >= 0; i--) {
+      for (var i = lvEvents.SelectedIndices.Count - 1; i >= 0; i--) {
         m_Cached.RemoveAt(lvEvents.SelectedIndices[i]);
       }
 
@@ -1320,7 +1312,7 @@ namespace SqlProfiler {
     }
 
     private void keepSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
-      for (int i = m_Cached.Count - 1; i >= 0; i--) {
+      for (var i = m_Cached.Count - 1; i >= 0; i--) {
         if (!lvEvents.SelectedIndices.Contains(i)) {
           m_Cached.RemoveAt(i);
         }
@@ -1331,8 +1323,8 @@ namespace SqlProfiler {
     }
 
     private void SaveToExcelXmlFile() {
-      XmlDocument doc = new XmlDocument();
-      XmlProcessingInstruction pi = doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'");
+      var doc = new XmlDocument();
+      var pi = doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'");
       doc.AppendChild(pi);
       const string urn = "urn:schemas-microsoft-com:office:spreadsheet";
       XmlNode root = doc.CreateElement("ss", "Workbook", urn);
@@ -1377,11 +1369,11 @@ namespace SqlProfiler {
 
       lock (m_Cached) {
         long rowNumber = 1;
-        foreach (ListViewItem lvi in m_Cached) {
+        foreach (var lvi in m_Cached) {
           row = doc.CreateElement("ss", "Row", urn);
           table.AppendChild(row);
-          for (int i = 0; i < m_columns.Count; i++) {
-            PerfColumn pc = m_columns[i];
+          for (var i = 0; i < m_columns.Count; i++) {
+            var pc = m_columns[i];
             if (pc.Column != -1) {
               XmlNode cell = doc.CreateElement("ss", "Cell", urn);
               row.AppendChild(cell);
@@ -1432,23 +1424,23 @@ namespace SqlProfiler {
         }
       }
 
-      SaveFileDialog sfd = new SaveFileDialog();
+      var sfd = new SaveFileDialog();
       sfd.Filter = "Excel XML|*.xml";
       sfd.Title = "Save the Excel XML FIle";
       sfd.ShowDialog();
 
       if (!string.IsNullOrEmpty(sfd.FileName)) {
-        using (StringWriter writer = new StringWriter()) {
-          XmlTextWriter textWriter = new XmlTextWriter(writer) {
+        using (var writer = new StringWriter()) {
+          var textWriter = new XmlTextWriter(writer) {
             Formatting = Formatting.Indented,
             Namespaces = true
           };
           doc.Save(textWriter);
-          string xml = writer.ToString();
-          MemoryStream xmlStream = new MemoryStream();
+          var xml = writer.ToString();
+          var xmlStream = new MemoryStream();
           xmlStream.Write(System.Text.Encoding.UTF8.GetBytes(xml), 0, xml.Length);
           xmlStream.Position = 0;
-          FileStream fs = new FileStream(sfd.FileName, FileMode.Create, FileAccess.Write);
+          var fs = new FileStream(sfd.FileName, FileMode.Create, FileAccess.Write);
           xmlStream.WriteTo(fs);
           fs.Close();
           xmlStream.Close();
@@ -1462,15 +1454,15 @@ namespace SqlProfiler {
     private void SetFilterEvents() {
       if (m_CachedUnFiltered.Count == 0) {
         lvEvents.SelectedIndices.Clear();
-        TraceProperties.TraceSettings ts = m_currentsettings.GetCopy();
-        using (TraceProperties frm = new TraceProperties()) {
+        var ts = m_currentsettings.GetCopy();
+        using (var frm = new TraceProperties()) {
           frm.SetSettings(ts);
           if (DialogResult.OK != frm.ShowDialog()) return;
           ts = frm.m_currentsettings.GetCopy();
 
           m_CachedUnFiltered.AddRange(m_Cached);
           m_Cached.Clear();
-          foreach (ListViewItem lvi in m_CachedUnFiltered) {
+          foreach (var lvi in m_CachedUnFiltered) {
             if (frm.IsIncluded(lvi) && m_Cached.Count < ts.Filters.MaximumEventCount) {
               m_Cached.Add(lvi);
             }
@@ -1524,7 +1516,7 @@ namespace SqlProfiler {
     }
 
     private void tbFilterEvents_Click(object sender, EventArgs e) {
-      ToolStripButton filterButton = (ToolStripButton) sender;
+      var filterButton = (ToolStripButton) sender;
       if (filterButton.Checked) {
         SetFilterEvents();
       }
