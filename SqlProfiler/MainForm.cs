@@ -64,7 +64,7 @@ namespace SqlProfiler {
     public MainForm() {
       InitializeComponent();
       tbStart.DefaultItem = tbRun;
-      Icon = System.Drawing.Icon.ExtractAssociatedIcon(Updater.CurrentFileLocation);
+      Icon = Icon.ExtractAssociatedIcon(Updater.CurrentFileLocation);
       Text = $"SqlProfiler {(Environment.Is64BitProcess ? "x64" : "x32")} - {Updater.CurrentVersion}";
       StartPosition = FormStartPosition.CenterScreen;
       edPassword.TextBox.PasswordChar = '*';
@@ -1454,16 +1454,15 @@ namespace SqlProfiler {
     private void SetFilterEvents() {
       if (m_CachedUnFiltered.Count == 0) {
         lvEvents.SelectedIndices.Clear();
-        var ts = m_currentsettings.GetCopy();
         using (var frm = new TraceProperties()) {
-          frm.SetSettings(ts);
+          frm.SetSettings(m_currentsettings.GetCopy());
           if (DialogResult.OK != frm.ShowDialog()) return;
-          ts = frm.m_currentsettings.GetCopy();
+          m_currentsettings = frm.m_currentsettings.GetCopy();
 
           m_CachedUnFiltered.AddRange(m_Cached);
           m_Cached.Clear();
           foreach (var lvi in m_CachedUnFiltered) {
-            if (frm.IsIncluded(lvi) && m_Cached.Count < ts.Filters.MaximumEventCount) {
+            if (frm.IsIncluded(lvi) && m_Cached.Count < m_currentsettings.Filters.MaximumEventCount) {
               m_Cached.Add(lvi);
             }
           }
