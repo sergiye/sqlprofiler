@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("SqlProfiler")]
-[assembly: AssemblyDescription("Profiler for SqlServer")]
+[assembly: AssemblyTitle("Sql Profiler")]
+[assembly: AssemblyDescription("Simple profiler for SqlServer")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Sergiy Egoshin")]
+[assembly: AssemblyCompany("SergiyE")]
 [assembly: AssemblyProduct("SqlProfiler")]
 [assembly: AssemblyCopyright("Copyright © Sergiy Egoshin 2023")]
 [assembly: AssemblyTrademark("")]

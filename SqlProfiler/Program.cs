@@ -1,13 +1,29 @@
-﻿using System;
+﻿using sergiye.Common;
+using System;
 using System.Windows.Forms;
 
 namespace SqlProfiler {
+
   static class Program {
-    /// <summary>
-    /// The main entry point for the application.
-    /// </summary>
+
     [STAThread]
     static void Main() {
+
+      if (!OperatingSystemHelper.IsCompatible(true, out var errorMessage, out var fixAction)) {
+
+        if (fixAction != null) {
+          if (MessageBox.Show(errorMessage, Updater.ApplicationName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) {
+            fixAction?.Invoke();
+          }
+        }
+        else {
+          MessageBox.Show(errorMessage, Updater.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        Environment.Exit(0);
+      }
+
+      Crasher.Listen();
+
       Application.EnableVisualStyles();
       Application.SetCompatibleTextRenderingDefault(false);
       Application.SetUnhandledExceptionMode(UnhandledExceptionMode.Automatic);

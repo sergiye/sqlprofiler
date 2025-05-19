@@ -1,4 +1,5 @@
-﻿using System;
+﻿using sergiye.Common;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -60,42 +61,68 @@ namespace SqlProfiler {
     private readonly List<PerfColumn> m_columns = new List<PerfColumn>();
     internal bool matchCase = false;
     internal bool wholeWord = false;
+    private readonly PersistentSettings settings;
 
     public MainForm() {
       InitializeComponent();
       tbStart.DefaultItem = tbRun;
       Icon = Icon.ExtractAssociatedIcon(Updater.CurrentFileLocation);
-      Text = $"SqlProfiler {(Environment.Is64BitProcess ? "x64" : "x32")} - {Updater.CurrentVersion}";
+      Text = $"{Updater.ApplicationName} {(Environment.Is64BitProcess ? "x64" : "x32")} - {Updater.CurrentVersion}";
       StartPosition = FormStartPosition.CenterScreen;
       edPassword.TextBox.PasswordChar = '*';
+
+      settings = new PersistentSettings();
+      settings.Load();
 
       m_currentsettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
       InitLV();
-      edServer.Text = Config.Instance.Server;
-      edUser.Text = Config.Instance.User;
-      edPassword.Text = Config.Instance.Password;
-      tbAuth.SelectedIndex = string.IsNullOrEmpty(Config.Instance.User) ? 0 : 1;
+
+      var portable = new UserOption("portable", true, storeSeiingsInFileToolStripMenuItem, settings);
+      portable.Changed += delegate {
+        settings.IsPortable = portable.Value;
+      };
+
+      edServer.Text = settings.GetValue("Server", ".");
+      edUser.Text = settings.GetValue("User", "sa");
+      edPassword.Text = settings.GetValue("Password", "sa");
+      tbAuth.SelectedIndex = string.IsNullOrEmpty(edUser.Text) ? 0 : 1;
       if (m_autostart) RunProfiling(false);
       UpdateButtons();
 
       MinimumSize = new Size(1100, 666);
       
       Load += (sender, args) => {
-        Left = Config.Instance.Left;
-        Top = Config.Instance.Top;
-        Height = Config.Instance.Height;
-        Width = Config.Instance.Width;
+        Left = settings.GetValue("Left", Screen.PrimaryScreen.WorkingArea.Left + Width / 2);
+        Top = settings.GetValue("Top", Screen.PrimaryScreen.WorkingArea.Top + Height / 2);
+        Height = settings.GetValue("Height", Screen.PrimaryScreen.WorkingArea.Height / 2);
+        Width = settings.GetValue("Width", Screen.PrimaryScreen.WorkingArea.Width / 2);
       };
 
       Closing += (sender, args) => {
-        Config.Instance.Left = Left;
-        Config.Instance.Top = Top;
-        Config.Instance.Height = Height;
-        Config.Instance.Width = Width;
-        
-        Config.Instance.Save();
+        settings.SetValue("Left", Left);
+        settings.SetValue("Top", Top);
+        settings.SetValue("Height", Height);
+        settings.SetValue("Width", Width);
       };
+
+      Updater.Subscribe(
+        (message, isError) => {
+          MessageBox.Show(message, Updater.ApplicationName, MessageBoxButtons.OK, isError ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+        },
+        (message) => {
+          return MessageBox.Show(message, Updater.ApplicationName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK;
+        },
+        Application.Exit
+      );
+
+      var timer = new System.Windows.Forms.Timer();
+      timer.Tick += async (_, _) => {
+        timer.Enabled = false;
+        timer.Enabled = !await Updater.CheckForUpdatesAsync(true);
+      };
+      timer.Interval = 3000;
+      timer.Enabled = true;
     }
 
     public sealed override Size MinimumSize {
@@ -103,10 +130,6 @@ namespace SqlProfiler {
       set { base.MinimumSize = value; }
     }
 
-    private string GetConfigFilePath() {
-      return Path.ChangeExtension(Updater.CurrentFileLocation, ".json");
-    }
-    
 //DatabaseName = Filters.DatabaseName,
 //LoginName = Filters.LoginName,
 //HostName = Filters.HostName,
@@ -172,17 +195,17 @@ namespace SqlProfiler {
           switch (args[i].ToLower()) {
             case "-s":
             case "-server":
-              Config.Instance.Server = ep;
+              settings.SetValue("Server", ep);
               i++;
               break;
             case "-u":
             case "-user":
-              Config.Instance.User = ep;
+              settings.SetValue("User", ep);
               i++;
               break;
             case "-p":
             case "-password":
-              Config.Instance.Password = ep;
+              settings.SetValue("Password", ep);
               i++;
               break;
             case "-m":
@@ -235,8 +258,9 @@ namespace SqlProfiler {
           i++;
         }
 
-        if (Config.Instance.Server.Length == 0) {
-          Config.Instance.Server = @".\sqlexpress";
+        var server = settings.GetValue("Server", "");
+        if (string.IsNullOrEmpty(server)) {
+          settings.SetValue("Server", @".\sqlexpress");
         }
       }
       catch (Exception e) {
@@ -1272,8 +1296,7 @@ namespace SqlProfiler {
     }
 
     private void mnAbout_Click(object sender, EventArgs e) {
-      MessageBox.Show(Text + "\nhttps://github.com/sergiye/sqlprofiler", "About", 
-        MessageBoxButtons.OK, MessageBoxIcon.Information);
+      MessageBox.Show($"{Updater.ApplicationTitle} {Updater.CurrentVersion} {(Environment.Is64BitProcess ? "x64" : "x32")}\nWritten by Sergiy Egoshyn (egoshin.sergey@gmail.com)", Updater.ApplicationTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void tbStayOnTop_Click(object sender, EventArgs e) {
@@ -1491,15 +1514,15 @@ namespace SqlProfiler {
     }
 
     private void edServer_TextChanged(object sender, EventArgs e) {
-      Config.Instance.Server = edServer.Text;
+      settings.SetValue("Server", edServer.Text);
     }
 
     private void edUser_TextChanged(object sender, EventArgs e) {
-      Config.Instance.User = edUser.Text;
+      settings.SetValue("User", edUser.Text);
     }
 
     private void edPassword_TextChanged(object sender, EventArgs e) {
-      Config.Instance.Password = edPassword.Text;
+      settings.SetValue("Password", edPassword.Text);
     }
 
     private void filterCapturedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
