@@ -1,6 +1,11 @@
 @echo off
 
-dotnet build SqlProfiler.sln -c Release -p:DebugType=None -p:Platform="Any CPU"
+FOR /F "tokens=* USEBACKQ" %%F IN (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) DO (
+SET msbuild="%%F"
+)
+ECHO %msbuild%
+
+@%msbuild% SqlProfiler.sln /t:Rebuild /p:DebugType=None /p:Configuration=Release
 
 if errorlevel 1 goto error
 
