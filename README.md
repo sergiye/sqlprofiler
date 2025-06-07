@@ -1,6 +1,6 @@
 # SqlProfiler
 [![Release](https://img.shields.io/github/v/release/sergiye/sqlprofiler)](https://github.com/sergiye/sqlprofiler/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/sergiye/sqlprofiler/total?color=ff4f42)](https://sergiye.github.io/github-release-stats/?username=rdp-wrapper&repository=rdpWrapper&page=1&per_page=100)
+[![Downloads](https://img.shields.io/github/downloads/sergiye/sqlprofiler/total?color=ff4f42)](https://sergiye.github.io/github-release-stats/?username=sergiye&repository=sqlprofiler&page=1&per_page=100)
 ![Last commit](https://img.shields.io/github/last-commit/sergiye/sqlprofiler?color=00AD00)
 
 *SqlProfiler is a simple and fast replacement for SQL Server Profiler with basic GUI.*
