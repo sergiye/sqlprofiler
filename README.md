@@ -8,11 +8,23 @@
 Can be used with both LocalDB, Express, Development and full-functional editions of SQL Server (2005 and later).
 Distribution package contains standalone portable (can be used without installation) version of SqlProfiler.
 
+## What does it look like?
+
+Here's a preview of the app's UI running on Windows 10:
+
+[<img src="https://github.com/sergiye/sqlprofiler/raw/master/preview.png" alt="preview" width="300"/>](https://github.com/sergiye/sqlprofiler/raw/master/preview.png)
+
+Also there are:
+ - `Auto`/`Light`/`Dark` themes integrated into executable.
+ - Custom `themes` supported from external files
+
+You can find custom theme examples [here](https://github.com/sergiye/sqlprofiler/tree/master/themes)
+To add custom theme to the app, just create a `themes` folder next to the executable file and place all theme files there.
+Don't forget to restart the app to scan for new theme files!
+
 ## Download Latest Version
 
-Authenticator provides an alternative solution to combine various two-factor authenticator services in one convenient place.
-
-This is the latest stable version and can be downloaded from the [releases](https://github.com/sergiye/sqlprofiler/releases) page, or get the newer one directly from:
+The published version can be obtained from [releases](https://github.com/sergiye/sqlprofiler/releases) page, or get the newer one directly from:
 [Latest Version](https://github.com/sergiye/sqlprofiler/releases/latest)
 
 ## Features
