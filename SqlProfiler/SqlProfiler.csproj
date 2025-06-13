@@ -22,12 +22,12 @@
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="*Form.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Update="ListViewNF.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Update="*Form.cs" SubType="Form" />
+    <Compile Update="TraceProperties.cs" SubType="Form" />
+    <Compile Update="ListViewNF.cs" SubType="Component" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\themes\*.json" Link="themes\%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\common\sergiye.Common\Crasher.cs" Link="Common\Crasher.cs" />
@@ -37,6 +37,12 @@
     <Compile Include="..\..\common\sergiye.Common\Updater.cs" Link="Common\Updater.cs" />
     <Compile Include="..\..\common\sergiye.Common.UI\PersistentSettings.cs" Link="Common\PersistentSettings.cs" />
     <Compile Include="..\..\common\sergiye.Common.UI\UserOption.cs" Link="Common\UserOption.cs" />
+    <Compile Include="..\..\common\sergiye.Common.UI\Themes\Theme.cs" Link="Common\Themes\Theme.cs" />
+    <Compile Include="..\..\common\sergiye.Common.UI\Themes\LightTheme.cs" Link="Common\Themes\LightTheme.cs" />
+    <Compile Include="..\..\common\sergiye.Common.UI\Themes\DarkTheme.cs" Link="Common\Themes\DarkTheme.cs" />
+    <Compile Include="..\..\common\sergiye.Common.UI\Themes\CustomTheme.cs" Link="Common\Themes\CustomTheme.cs" />
+    <Compile Include="..\..\common\sergiye.Common.UI\Themes\ThemedToolStripRenderer.cs" Link="Common\Themes\ThemedToolStripRenderer.cs" />
+    <Compile Include="..\..\common\sergiye.Common.UI\ToolStripRadioButtonMenuItem.cs" Link="Common\ToolStripRadioButtonMenuItem.cs" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>if /I "$(ConfigurationName)" == "Release" if exist "$(SolutionDir)\SqlProfiler\sign.bat" "$(SolutionDir)\SqlProfiler\sign.bat" "$(TargetPath)"</PostBuildEvent>

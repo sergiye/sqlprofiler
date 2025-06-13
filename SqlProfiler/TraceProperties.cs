@@ -1,4 +1,5 @@
-﻿using System;
+﻿using sergiye.Common;
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.Windows.Forms;
@@ -17,7 +18,6 @@ namespace SqlProfiler {
       GreaterThan,
       LessThan
     }
-
 
     public static StringFilterCondition ParseStringCondition(string value) {
       switch (value.ToLower()) {
@@ -76,7 +76,7 @@ namespace SqlProfiler {
 
     [Serializable]
     public class TraceSettings {
-      
+
       public TraceEventsColumns EventsColumns = new TraceEventsColumns {
         BatchCompleted = true,
         RPCCompleted = true,
@@ -89,7 +89,7 @@ namespace SqlProfiler {
         ObjectName = true,
 #endif
       };
-      
+
       public TraceFilters Filters = new TraceFilters {
         MaximumEventCount = 5000,
         CpuFilterCondition = IntFilterCondition.GreaterThan,
@@ -112,50 +112,50 @@ namespace SqlProfiler {
 
       public TraceSettings GetCopy() {
         return new TraceSettings {
-            EventsColumns = new TraceEventsColumns {
-              BatchCompleted = EventsColumns.BatchCompleted,
-              BatchStarting = EventsColumns.BatchStarting,
-              ExistingConnection = EventsColumns.ExistingConnection,
-              LoginLogout = EventsColumns.LoginLogout,
-              RPCCompleted = EventsColumns.RPCCompleted,
-              RPCStarting = EventsColumns.RPCStarting,
-              SPStmtCompleted = EventsColumns.SPStmtCompleted,
-              SPStmtStarting = EventsColumns.SPStmtStarting,
-              UserErrorMessage = EventsColumns.UserErrorMessage,
-              ApplicationName = EventsColumns.ApplicationName,
-              HostName = EventsColumns.HostName,
-              DatabaseName = EventsColumns.DatabaseName,
-              EndTime = EventsColumns.EndTime,
-              ObjectName = EventsColumns.ObjectName,
-              StartTime = EventsColumns.StartTime,
-              BlockedProcessPeport = EventsColumns.BlockedProcessPeport,
-              SQLStmtStarting = EventsColumns.SQLStmtStarting,
-              SQLStmtCompleted = EventsColumns.SQLStmtCompleted
-            },
-            Filters = new TraceFilters {
-              CPU = Filters.CPU,
-              CpuFilterCondition = Filters.CpuFilterCondition,
-              DatabaseName = Filters.DatabaseName,
-              DatabaseNameFilterCondition = Filters.DatabaseNameFilterCondition,
-              Duration = Filters.Duration,
-              DurationFilterCondition = Filters.DurationFilterCondition,
-              LoginName = Filters.LoginName,
-              HostName = Filters.HostName,
-              HostNameFilterCondition = Filters.HostNameFilterCondition,
-              LoginNameFilterCondition = Filters.LoginNameFilterCondition,
-              Reads = Filters.Reads,
-              ReadsFilterCondition = Filters.ReadsFilterCondition,
-              TextData = Filters.TextData,
-              TextDataFilterCondition = Filters.TextDataFilterCondition,
-              Writes = Filters.Writes,
-              WritesFilterCondition = Filters.WritesFilterCondition,
-              MaximumEventCount = Filters.MaximumEventCount,
-              SPID = Filters.SPID,
-              SPIDFilterCondition = Filters.SPIDFilterCondition,
-              ApplicationName = Filters.ApplicationName,
-              ApplicationNameFilterCondition = Filters.ApplicationNameFilterCondition,
-            }
+          EventsColumns = new TraceEventsColumns {
+            BatchCompleted = EventsColumns.BatchCompleted,
+            BatchStarting = EventsColumns.BatchStarting,
+            ExistingConnection = EventsColumns.ExistingConnection,
+            LoginLogout = EventsColumns.LoginLogout,
+            RPCCompleted = EventsColumns.RPCCompleted,
+            RPCStarting = EventsColumns.RPCStarting,
+            SPStmtCompleted = EventsColumns.SPStmtCompleted,
+            SPStmtStarting = EventsColumns.SPStmtStarting,
+            UserErrorMessage = EventsColumns.UserErrorMessage,
+            ApplicationName = EventsColumns.ApplicationName,
+            HostName = EventsColumns.HostName,
+            DatabaseName = EventsColumns.DatabaseName,
+            EndTime = EventsColumns.EndTime,
+            ObjectName = EventsColumns.ObjectName,
+            StartTime = EventsColumns.StartTime,
+            BlockedProcessPeport = EventsColumns.BlockedProcessPeport,
+            SQLStmtStarting = EventsColumns.SQLStmtStarting,
+            SQLStmtCompleted = EventsColumns.SQLStmtCompleted
+          },
+          Filters = new TraceFilters {
+            CPU = Filters.CPU,
+            CpuFilterCondition = Filters.CpuFilterCondition,
+            DatabaseName = Filters.DatabaseName,
+            DatabaseNameFilterCondition = Filters.DatabaseNameFilterCondition,
+            Duration = Filters.Duration,
+            DurationFilterCondition = Filters.DurationFilterCondition,
+            LoginName = Filters.LoginName,
+            HostName = Filters.HostName,
+            HostNameFilterCondition = Filters.HostNameFilterCondition,
+            LoginNameFilterCondition = Filters.LoginNameFilterCondition,
+            Reads = Filters.Reads,
+            ReadsFilterCondition = Filters.ReadsFilterCondition,
+            TextData = Filters.TextData,
+            TextDataFilterCondition = Filters.TextDataFilterCondition,
+            Writes = Filters.Writes,
+            WritesFilterCondition = Filters.WritesFilterCondition,
+            MaximumEventCount = Filters.MaximumEventCount,
+            SPID = Filters.SPID,
+            SPIDFilterCondition = Filters.SPIDFilterCondition,
+            ApplicationName = Filters.ApplicationName,
+            ApplicationNameFilterCondition = Filters.ApplicationNameFilterCondition,
           }
+        }
           ;
       }
     }
@@ -282,7 +282,6 @@ namespace SqlProfiler {
       public bool HostName { get; set; }
     }
 
-
     [Serializable]
     public class TraceFilters {
       [Category(@"CPU")]
@@ -352,7 +351,7 @@ namespace SqlProfiler {
 
       [Category(@"Maximum events count")]
       [DisplayName(@"Maximum events count")]
-//            [DefaultValue(5000)]
+      //            [DefaultValue(5000)]
       public int MaximumEventCount { get; set; }
 
       [Category(@"SPID")]
@@ -374,6 +373,8 @@ namespace SqlProfiler {
 
     public TraceProperties() {
       InitializeComponent();
+      tabControl1.Tag = Theme.SkipThemeTag;
+      Theme.Current.Apply(this);
     }
 
     public void SetSettings(TraceSettings st) {
@@ -453,7 +454,6 @@ namespace SqlProfiler {
 
       return included;
     }
-
 
     private bool IsIncluded(IntFilterCondition filterCondition, int? filter, string entryToCheck) {
       bool included = true; //Until removed.  Negative logic is applied here.

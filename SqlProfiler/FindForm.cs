@@ -1,4 +1,5 @@
-﻿using System;
+﻿using sergiye.Common;
+using System;
 using System.Windows.Forms;
 
 namespace SqlProfiler {
@@ -14,6 +15,7 @@ namespace SqlProfiler {
       edPattern.Text = m_mainForm.lastpattern;
       chkCase.Checked = m_mainForm.matchCase;
       chkWholeWord.Checked = m_mainForm.wholeWord;
+      Theme.Current.Apply(this);
     }
 
     private void btnFindNext_Click(object sender, EventArgs e) {

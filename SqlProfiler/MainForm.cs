@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -59,6 +60,7 @@ namespace SqlProfiler {
     private PerfInfo m_first, m_prev;
     private TraceProperties.TraceSettings m_currentsettings;
     private readonly List<PerfColumn> m_columns = new List<PerfColumn>();
+    private int fixedColumnIndex = 1;
     internal bool matchCase = false;
     internal bool wholeWord = false;
     private readonly PersistentSettings settings;
@@ -123,7 +125,86 @@ namespace SqlProfiler {
       };
       timer.Interval = 3000;
       timer.Enabled = true;
+
+      InitializeTheme();
+
+      this.Load += (s, e) => {
+        this.Width += 1;
+      };
     }
+
+    #region themes
+
+    private void OnCurrentThemeChecnged() {
+      m_Lex.DefaultColor = Theme.Current.ForegroundColor;
+      m_Lex.KeywordColor = Theme.Current.SelectedBackgroundColor;
+      m_Lex.GreyKeywordColor = Theme.Current.InfoColor;
+      m_Lex.FunctionColor = Theme.Current.HyperlinkColor;
+      m_Lex.ValueColor = Theme.Current.WarnColor;
+      m_Lex.CommentColor = Theme.Current.MessageColor;
+    }
+
+    private void InitializeTheme() {
+
+      mainMenu.Renderer = new ThemedToolStripRenderer();
+      toolStrip1.Renderer = new ThemedToolStripRenderer();
+      contextMenu.Renderer = new ThemedToolStripRenderer();
+      Theme.OnCurrentChecnged -= OnCurrentThemeChecnged;
+      OnCurrentThemeChecnged(); //apply current theme colors
+      Theme.OnCurrentChecnged += OnCurrentThemeChecnged;
+
+      if (Theme.SupportsAutoThemeSwitching()) {
+        var autoThemeMenuItem = new ToolStripRadioButtonMenuItem("Auto");
+        autoThemeMenuItem.Click += (o, e) => {
+          autoThemeMenuItem.Checked = true;
+          Theme.SetAutoTheme();
+          settings.SetValue("Theme", "auto");
+        };
+        themeMenuItem.DropDownItems.Add(autoThemeMenuItem);
+      }
+
+      var allThemes = CustomTheme.GetAllThemes("themes", "SqlProfiler.themes").OrderBy(x => x.DisplayName).ToList();
+
+      var settingsTheme = settings.GetValue("Theme", "");
+      var setTheme = allThemes.FirstOrDefault(theme => settingsTheme == theme.Id);
+      if (setTheme != null) {
+        Theme.Current = setTheme;
+      }
+
+      AddThemeMenuItems(allThemes.Where(t => t is not CustomTheme));
+      var customThemes = allThemes.Where(t => t is CustomTheme).ToList();
+      if (customThemes.Count > 0) {
+        themeMenuItem.DropDownItems.Add("-");
+        AddThemeMenuItems(customThemes);
+      }
+
+      if (setTheme == null && themeMenuItem.DropDownItems.Count > 0)
+        themeMenuItem.DropDownItems[0].PerformClick();
+
+      Theme.Current.Apply(this);
+    }
+
+    private void AddThemeMenuItems(IEnumerable<Theme> themes) {
+      foreach (var theme in themes) {
+        var item = new ToolStripRadioButtonMenuItem(theme.DisplayName);
+        item.Click += OnThemeMenuItemClick;
+        item.Tag = theme;
+        themeMenuItem.DropDownItems.Add(item);
+        if (Theme.Current != null && Theme.Current.Id == theme.Id) {
+          item.Checked = true;
+        }
+      }
+    }
+
+    private void OnThemeMenuItemClick(object sender, EventArgs e) {
+      if (sender is not ToolStripRadioButtonMenuItem item || item.Tag is not Theme theme)
+        return;
+      item.Checked = true;
+      Theme.Current = theme;
+      settings.SetValue("Theme", theme.Id);
+    }
+
+    #endregion
 
     public sealed override Size MinimumSize {
       get { return base.MinimumSize; }
@@ -318,11 +399,11 @@ namespace SqlProfiler {
         AllowColumnReorder = false
       };
       lvEvents.RetrieveVirtualItem += lvEvents_RetrieveVirtualItem;
-      lvEvents.ItemSelectionChanged += listView1_ItemSelectionChanged_1;
+      lvEvents.ItemSelectionChanged += lvEvents_ItemSelectionChanged;
       lvEvents.ColumnClick += lvEvents_ColumnClick;
       lvEvents.SelectedIndexChanged += lvEvents_SelectedIndexChanged;
       lvEvents.VirtualItemsSelectionRangeChanged += LvEventsOnVirtualItemsSelectionRangeChanged;
-      lvEvents.ContextMenuStrip = contextMenuStrip1;
+      lvEvents.ContextMenuStrip = contextMenu;
       splitContainer1.Panel1.Controls.Add(lvEvents);
       InitColumns();
       InitGridColumns();
@@ -331,6 +412,7 @@ namespace SqlProfiler {
     private void InitColumns() {
       m_columns.Clear();
       m_columns.Add(new PerfColumn {Caption = "Event Class", Column = ProfilerEventColumns.EventClass, Width = 122});
+      fixedColumnIndex = m_columns.Count;
       m_columns.Add(new PerfColumn {Caption = "Text Data", Column = ProfilerEventColumns.TextData, Width = 255});
       m_columns.Add(new PerfColumn {Caption = "Login Name", Column = ProfilerEventColumns.LoginName, Width = 79});
       m_columns.Add(new PerfColumn {
@@ -378,6 +460,8 @@ namespace SqlProfiler {
     private void InitGridColumns() {
       InitColumns();
       lvEvents.BeginUpdate();
+      lvEvents.SizeChanged -= LvEvents_SizeChanged;
+      lvEvents.ColumnWidthChanged -= LvEvents_ColumnWidthChanged;
       try {
         lvEvents.Columns.Clear();
         foreach (var pc in m_columns) {
@@ -387,11 +471,29 @@ namespace SqlProfiler {
       }
       finally {
         lvEvents.EndUpdate();
+        lvEvents.SizeChanged += LvEvents_SizeChanged;
+        lvEvents.ColumnWidthChanged += LvEvents_ColumnWidthChanged;
       }
     }
 
-    private void LvEventsOnVirtualItemsSelectionRangeChanged(object sender,
-      ListViewVirtualItemsSelectionRangeChangedEventArgs listViewVirtualItemsSelectionRangeChangedEventArgs) {
+    private void LvEvents_SizeChanged(object sender, EventArgs e) {
+      var otherColumnsWidth = 0;
+      for (var i = 0; i < lvEvents.Columns.Count; i++) {
+        if (i == fixedColumnIndex) continue;
+        otherColumnsWidth += lvEvents.Columns[i].Width;
+      }
+      
+      lvEvents.Columns[fixedColumnIndex].Width = lvEvents.Width - otherColumnsWidth - SystemInformation.VerticalScrollBarWidth;
+    }
+
+    private void LvEvents_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e) {
+      if (e.ColumnIndex == fixedColumnIndex)
+        return;
+      LvEvents_SizeChanged(sender, EventArgs.Empty);
+    }
+
+    private void LvEventsOnVirtualItemsSelectionRangeChanged(object sender, ListViewVirtualItemsSelectionRangeChangedEventArgs e) {
+      if (!e.IsSelected) return;
       UpdateSourceBox();
     }
 
@@ -449,21 +551,23 @@ namespace SqlProfiler {
         m_Cached.Add(lvi);
         if (last) {
           lvEvents.VirtualListSize = m_Cached.Count;
-          lvEvents.SelectedIndices.Clear();
-          FocusLVI(tbScroll.Checked ? lvEvents.Items[m_Cached.Count - 1] : current, tbScroll.Checked);
+          if (tbScroll.Checked) {
+            lvEvents.SelectedIndices.Clear();
+            FocusLVI(lvEvents.Items[m_Cached.Count - 1], tbScroll.Checked);
+          }
+          //FocusLVI(tbScroll.Checked ? lvEvents.Items[m_Cached.Count - 1] : current, tbScroll.Checked);
           lvEvents.Invalidate(lvi.Bounds);
         }
       }
     }
 
     internal void FocusLVI(ListViewItem lvi, bool ensure) {
-      if (null != lvi) {
-        lvi.Focused = true;
-        lvi.Selected = true;
-        listView1_ItemSelectionChanged_1(lvEvents, null);
-        if (ensure) {
-          lvEvents.EnsureVisible(lvEvents.Items.IndexOf(lvi));
-        }
+      if (lvi == null) return;
+      lvi.Focused = true;
+      lvi.Selected = true;
+      lvEvents_ItemSelectionChanged(lvEvents, null);
+      if (ensure) {
+        lvEvents.EnsureVisible(lvEvents.Items.IndexOf(lvi));
       }
     }
 
@@ -802,15 +906,23 @@ namespace SqlProfiler {
       UpdateButtons();
     }
 
-    private void listView1_ItemSelectionChanged_1(object sender, ListViewItemSelectionChangedEventArgs e) {
+    private void lvEvents_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e) {
       UpdateSourceBox();
     }
+
+    private int[] prevSelectedIndices = null;
 
     private void UpdateSourceBox() {
       if (dontUpdateSource) return;
       var sb = new StringBuilder();
 
-      foreach (int i in lvEvents.SelectedIndices) {
+      int[] selectedIndices = new int[lvEvents.SelectedIndices.Count];
+      lvEvents.SelectedIndices.CopyTo(selectedIndices, 0);
+      if (prevSelectedIndices != null && Enumerable.SequenceEqual(selectedIndices, prevSelectedIndices))
+        return;
+      prevSelectedIndices = selectedIndices;
+
+      foreach (int i in selectedIndices) {
         var lv = m_Cached[i];
         if (lv.SubItems[1].Text != "") {
           sb.AppendFormat("{0}\r\ngo\r\n", lv.SubItems[1].Text);
@@ -932,7 +1044,7 @@ namespace SqlProfiler {
         m_Cached.Clear();
         m_itembysql.Clear();
         lvEvents.VirtualListSize = 0;
-        listView1_ItemSelectionChanged_1(lvEvents, null);
+        lvEvents_ItemSelectionChanged(lvEvents, null);
         lvEvents.Invalidate();
       }
     }
@@ -1299,30 +1411,14 @@ namespace SqlProfiler {
       MessageBox.Show($"{Updater.ApplicationTitle} {Updater.CurrentVersion} {(Environment.Is64BitProcess ? "x64" : "x32")}\nWritten by Sergiy Egoshyn (egoshin.sergey@gmail.com)", Updater.ApplicationTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
-    private void tbStayOnTop_Click(object sender, EventArgs e) {
-      SetStayOnTop();
+    private void stayOnTop_Click(object sender, EventArgs e) {
+      stayOnTopToolStripMenuItem.Checked = !stayOnTopToolStripMenuItem.Checked;
+      this.TopMost = stayOnTopToolStripMenuItem.Checked;
     }
 
-    private void SetStayOnTop() {
-      tbStayOnTop.Checked = !tbStayOnTop.Checked;
-      this.TopMost = tbStayOnTop.Checked;
-    }
-
-    private void toolStripButton1_Click(object sender, EventArgs e) {
-      SetTransparent();
-    }
-
-    private void SetTransparent() {
-      tbTransparent.Checked = !tbTransparent.Checked;
-      this.Opacity = tbTransparent.Checked ? 0.50 : 1;
-    }
-
-    private void stayOnTopToolStripMenuItem_Click(object sender, EventArgs e) {
-      SetStayOnTop();
-    }
-
-    private void transparentToolStripMenuItem_Click(object sender, EventArgs e) {
-      SetTransparent();
+    private void transparent_Click(object sender, EventArgs e) {
+      transparentToolStripMenuItem.Checked = !transparentToolStripMenuItem.Checked;
+      this.Opacity = transparentToolStripMenuItem.Checked ? 0.70 : 1;
     }
 
     private void deleteSelectedToolStripMenuItem_Click(object sender, EventArgs e) {

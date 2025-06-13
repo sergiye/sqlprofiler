@@ -81,44 +81,53 @@ namespace SqlProfiler {
       Array.Sort(m_IdentifiersArray);
     }
 
+    #region Colors
+
+    public Color DefaultColor { get; set; } = Color.Black;
+    public Color KeywordColor { get; set; } = Color.Blue;
+    public Color GreyKeywordColor { get; set; } = Color.Gray;
+    public Color FunctionColor { get; set; } = Color.Fuchsia;
+    public Color ValueColor { get; set; } = Color.Red;
+    public Color CommentColor { get; set; } = Color.DarkGreen;
+
+    #endregion
+
     public void FillRichEdit(System.Windows.Forms.RichTextBox rich, string value) {
       rich.Text = "";
       Line = value;
 
       RTFBuilder sb = new RTFBuilder {BackColor = rich.BackColor};
       while (TokenId != TokenKind.tkNull) {
-        Color forecolor;
         switch (TokenId) {
           case TokenKind.tkKey:
-            forecolor = Color.Blue;
+            sb.ForeColor = KeywordColor;
             break;
           case TokenKind.tkFunction:
-            forecolor = Color.Fuchsia;
+            sb.ForeColor = FunctionColor;
             break;
           case TokenKind.tkGreyKeyword:
-            forecolor = Color.Gray;
+            sb.ForeColor = GreyKeywordColor;
             break;
           case TokenKind.tkFuKeyword:
-            forecolor = Color.Fuchsia;
+            sb.ForeColor = FunctionColor;
             break;
           case TokenKind.tkDatatype:
-            forecolor = Color.Blue;
+            sb.ForeColor = KeywordColor;
             break;
           case TokenKind.tkNumber:
-            forecolor = Color.Red;
+            sb.ForeColor = ValueColor;
             break;
           case TokenKind.tkString:
-            forecolor = Color.Red;
+            sb.ForeColor = ValueColor;
             break;
           case TokenKind.tkComment:
-            forecolor = Color.DarkGreen;
+            sb.ForeColor = CommentColor;
             break;
           default:
-            forecolor = Color.Black;
+            sb.ForeColor = DefaultColor;
             break;
         }
 
-        sb.ForeColor = forecolor;
         if (Token == Environment.NewLine || Token == "\r" || Token == "\n") {
           sb.AppendLine();
         }

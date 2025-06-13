@@ -5,6 +5,7 @@ SET msbuild="%%F"
 )
 ECHO %msbuild%
 
+@%msbuild% SqlProfiler.sln /t:restore /p:RestorePackagesConfig=true
 @%msbuild% SqlProfiler.sln /t:Rebuild /p:DebugType=None /p:Configuration=Release
 
 if errorlevel 1 goto error
