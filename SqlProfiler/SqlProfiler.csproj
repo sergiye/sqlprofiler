@@ -23,8 +23,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Update="*Form.cs" SubType="Form" />
-    <Compile Update="TraceProperties.cs" SubType="Form" />
-    <Compile Update="ListViewNF.cs" SubType="Component" />
+    <Compile Update="UI\TraceProperties.cs" SubType="Form" />
+    <Compile Update="UI\ListViewNF.cs" SubType="Component" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\themes\*.json" Link="themes\%(Filename)%(Extension)" />
