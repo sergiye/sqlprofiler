@@ -1,36 +1,34 @@
 ﻿namespace SqlProfiler {
-	partial class MainForm {
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.IContainer components = null;
+  partial class MainForm {
+    /// <summary>
+    /// Required designer variable.
+    /// </summary>
+    private System.ComponentModel.IContainer components = null;
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose(bool disposing) {
-			if (disposing && (components != null)) {
-				components.Dispose();
-			}
+    /// <summary>
+    /// Clean up any resources being used.
+    /// </summary>
+    /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+    protected override void Dispose(bool disposing) {
+      if (disposing && (components != null)) {
+        components.Dispose();
+      }
 
-			base.Dispose(disposing);
-		}
+      base.Dispose(disposing);
+    }
 
-		#region Windows Form Designer generated code
+    #region Windows Form Designer generated code
 
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent() {
+    /// <summary>
+    /// Required method for Designer support - do not modify
+    /// the contents of this method with the code editor.
+    /// </summary>
+    private void InitializeComponent() {
       this.components = new System.ComponentModel.Container();
       this.statusStrip1 = new System.Windows.Forms.StatusStrip();
       this.slEPS = new System.Windows.Forms.ToolStripStatusLabel();
       this.toolStrip1 = new System.Windows.Forms.ToolStrip();
       this.tbClear = new System.Windows.Forms.ToolStripButton();
-      this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-      this.tbScroll = new System.Windows.Forms.ToolStripButton();
       this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
       this.tbStart = new System.Windows.Forms.ToolStripSplitButton();
       this.tbRun = new System.Windows.Forms.ToolStripMenuItem();
@@ -82,6 +80,7 @@
       this.deleteSelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.keepSelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.autoScrollToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.stayOnTopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.transparentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.themeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -105,10 +104,10 @@
       this.statusStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
       this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.slEPS});
-      this.statusStrip1.Location = new System.Drawing.Point(0, 959);
+      this.statusStrip1.Location = new System.Drawing.Point(0, 802);
       this.statusStrip1.Name = "statusStrip1";
-      this.statusStrip1.Padding = new System.Windows.Forms.Padding(2, 0, 23, 0);
-      this.statusStrip1.Size = new System.Drawing.Size(1631, 22);
+      this.statusStrip1.Padding = new System.Windows.Forms.Padding(2, 0, 21, 0);
+      this.statusStrip1.Size = new System.Drawing.Size(1468, 22);
       this.statusStrip1.TabIndex = 0;
       this.statusStrip1.Text = "statusStrip1";
       // 
@@ -119,11 +118,9 @@
       // 
       // toolStrip1
       // 
-      this.toolStrip1.ImageScalingSize = new System.Drawing.Size(32, 32);
+      this.toolStrip1.ImageScalingSize = new System.Drawing.Size(28, 28);
       this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tbClear,
-            this.toolStripSeparator5,
-            this.tbScroll,
             this.toolStripSeparator1,
             this.tbStart,
             this.tbPause,
@@ -140,10 +137,10 @@
             this.toolStripLabel3,
             this.edPassword,
             this.toolStripSeparator3});
-      this.toolStrip1.Location = new System.Drawing.Point(0, 37);
+      this.toolStrip1.Location = new System.Drawing.Point(0, 36);
       this.toolStrip1.Name = "toolStrip1";
       this.toolStrip1.Padding = new System.Windows.Forms.Padding(0, 0, 3, 0);
-      this.toolStrip1.Size = new System.Drawing.Size(1631, 41);
+      this.toolStrip1.Size = new System.Drawing.Size(1468, 41);
       this.toolStrip1.TabIndex = 1;
       // 
       // tbClear
@@ -156,23 +153,6 @@
       this.tbClear.Text = "Clear trace";
       this.tbClear.ToolTipText = "Clear trace\r\nCtrl+Shift+Del";
       this.tbClear.Click += new System.EventHandler(this.tbClear_Click);
-      // 
-      // toolStripSeparator5
-      // 
-      this.toolStripSeparator5.Name = "toolStripSeparator5";
-      this.toolStripSeparator5.Size = new System.Drawing.Size(6, 41);
-      // 
-      // tbScroll
-      // 
-      this.tbScroll.Checked = true;
-      this.tbScroll.CheckOnClick = true;
-      this.tbScroll.CheckState = System.Windows.Forms.CheckState.Checked;
-      this.tbScroll.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-      this.tbScroll.Image = global::SqlProfiler.Properties.Resources.imScroll;
-      this.tbScroll.ImageTransparentColor = System.Drawing.Color.Transparent;
-      this.tbScroll.Name = "tbScroll";
-      this.tbScroll.Size = new System.Drawing.Size(36, 36);
-      this.tbScroll.Text = "Auto scroll window";
       // 
       // toolStripSeparator1
       // 
@@ -257,7 +237,7 @@
       // 
       this.edServer.Font = new System.Drawing.Font("Segoe UI", 9F);
       this.edServer.Name = "edServer";
-      this.edServer.Size = new System.Drawing.Size(164, 41);
+      this.edServer.Size = new System.Drawing.Size(148, 41);
       this.edServer.TextChanged += new System.EventHandler(this.edServer_TextChanged);
       // 
       // toolStripSeparator4
@@ -272,7 +252,7 @@
             "Windows auth",
             "SQL Server auth"});
       this.tbAuth.Name = "tbAuth";
-      this.tbAuth.Size = new System.Drawing.Size(200, 41);
+      this.tbAuth.Size = new System.Drawing.Size(180, 41);
       this.tbAuth.SelectedIndexChanged += new System.EventHandler(this.tbAuth_SelectedIndexChanged);
       // 
       // toolStripLabel2
@@ -285,7 +265,7 @@
       // 
       this.edUser.Font = new System.Drawing.Font("Segoe UI", 9F);
       this.edUser.Name = "edUser";
-      this.edUser.Size = new System.Drawing.Size(164, 41);
+      this.edUser.Size = new System.Drawing.Size(148, 41);
       this.edUser.TextChanged += new System.EventHandler(this.edUser_TextChanged);
       // 
       // toolStripLabel3
@@ -298,7 +278,7 @@
       // 
       this.edPassword.Font = new System.Drawing.Font("Segoe UI", 9F);
       this.edPassword.Name = "edPassword";
-      this.edPassword.Size = new System.Drawing.Size(164, 41);
+      this.edPassword.Size = new System.Drawing.Size(148, 41);
       this.edPassword.TextChanged += new System.EventHandler(this.edPassword_TextChanged);
       // 
       // toolStripSeparator3
@@ -309,17 +289,17 @@
       // splitContainer1
       // 
       this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-      this.splitContainer1.Location = new System.Drawing.Point(0, 78);
-      this.splitContainer1.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+      this.splitContainer1.Location = new System.Drawing.Point(0, 77);
+      this.splitContainer1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
       this.splitContainer1.Name = "splitContainer1";
       this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
       // 
       // splitContainer1.Panel2
       // 
       this.splitContainer1.Panel2.Controls.Add(this.reTextData);
-      this.splitContainer1.Size = new System.Drawing.Size(1631, 881);
-      this.splitContainer1.SplitterDistance = 558;
-      this.splitContainer1.SplitterWidth = 8;
+      this.splitContainer1.Size = new System.Drawing.Size(1468, 725);
+      this.splitContainer1.SplitterDistance = 459;
+      this.splitContainer1.SplitterWidth = 7;
       this.splitContainer1.TabIndex = 4;
       // 
       // reTextData
@@ -327,10 +307,10 @@
       this.reTextData.Dock = System.Windows.Forms.DockStyle.Fill;
       this.reTextData.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
       this.reTextData.Location = new System.Drawing.Point(0, 0);
-      this.reTextData.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+      this.reTextData.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
       this.reTextData.Name = "reTextData";
       this.reTextData.ReadOnly = true;
-      this.reTextData.Size = new System.Drawing.Size(1631, 315);
+      this.reTextData.Size = new System.Drawing.Size(1468, 259);
       this.reTextData.TabIndex = 4;
       this.reTextData.Text = "";
       // 
@@ -388,8 +368,7 @@
             this.helpToolStripMenuItem});
       this.mainMenu.Location = new System.Drawing.Point(0, 0);
       this.mainMenu.Name = "mainMenu";
-      this.mainMenu.Padding = new System.Windows.Forms.Padding(10, 4, 0, 4);
-      this.mainMenu.Size = new System.Drawing.Size(1631, 37);
+      this.mainMenu.Size = new System.Drawing.Size(1468, 36);
       this.mainMenu.TabIndex = 5;
       this.mainMenu.Text = "menuStrip1";
       // 
@@ -409,7 +388,7 @@
             this.toolStripMenuItem5,
             this.exitToolStripMenuItem});
       this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-      this.fileToolStripMenuItem.Size = new System.Drawing.Size(54, 29);
+      this.fileToolStripMenuItem.Size = new System.Drawing.Size(54, 30);
       this.fileToolStripMenuItem.Text = "&File";
       // 
       // storeSeiingsInFileToolStripMenuItem
@@ -467,7 +446,7 @@
       // 
       this.extractAllEventsToolStripMenuItem.Name = "extractAllEventsToolStripMenuItem";
       this.extractAllEventsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
-            | System.Windows.Forms.Keys.Insert)));
+            | System.Windows.Forms.Keys.C)));
       this.extractAllEventsToolStripMenuItem.Size = new System.Drawing.Size(491, 34);
       this.extractAllEventsToolStripMenuItem.Text = "Copy all events to clipboard";
       this.extractAllEventsToolStripMenuItem.Click += new System.EventHandler(this.extractAllEventsToolStripMenuItem_Click);
@@ -476,7 +455,7 @@
       // 
       this.extractSelectedEventsToolStripMenuItem.Name = "extractSelectedEventsToolStripMenuItem";
       this.extractSelectedEventsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Alt) 
-            | System.Windows.Forms.Keys.Insert)));
+            | System.Windows.Forms.Keys.C)));
       this.extractSelectedEventsToolStripMenuItem.Size = new System.Drawing.Size(491, 34);
       this.extractSelectedEventsToolStripMenuItem.Text = "Copy selected events to clipboard";
       this.extractSelectedEventsToolStripMenuItem.Click += new System.EventHandler(this.extractSelectedEventsToolStripMenuItem_Click);
@@ -508,7 +487,7 @@
       // exitToolStripMenuItem
       // 
       this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-      this.exitToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.X)));
+      this.exitToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.W)));
       this.exitToolStripMenuItem.Size = new System.Drawing.Size(491, 34);
       this.exitToolStripMenuItem.Text = "E&xit";
       this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
@@ -524,7 +503,7 @@
             this.deleteSelectedToolStripMenuItem,
             this.keepSelectedToolStripMenuItem});
       this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-      this.editToolStripMenuItem.Size = new System.Drawing.Size(58, 29);
+      this.editToolStripMenuItem.Size = new System.Drawing.Size(58, 30);
       this.editToolStripMenuItem.Text = "&Edit";
       // 
       // selectAllToolStripMenuItem
@@ -584,18 +563,26 @@
       // viewToolStripMenuItem
       // 
       this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.autoScrollToolStripMenuItem,
             this.stayOnTopToolStripMenuItem,
             this.transparentToolStripMenuItem,
             this.themeMenuItem});
       this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
-      this.viewToolStripMenuItem.Size = new System.Drawing.Size(65, 29);
+      this.viewToolStripMenuItem.Size = new System.Drawing.Size(65, 30);
       this.viewToolStripMenuItem.Text = "View";
+      // 
+      // autoScrollToolStripMenuItem
+      // 
+      this.autoScrollToolStripMenuItem.Name = "autoScrollToolStripMenuItem";
+      this.autoScrollToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
+      this.autoScrollToolStripMenuItem.Size = new System.Drawing.Size(270, 34);
+      this.autoScrollToolStripMenuItem.Text = "Auto scroll";
       // 
       // stayOnTopToolStripMenuItem
       // 
       this.stayOnTopToolStripMenuItem.Name = "stayOnTopToolStripMenuItem";
       this.stayOnTopToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.T)));
-      this.stayOnTopToolStripMenuItem.Size = new System.Drawing.Size(268, 34);
+      this.stayOnTopToolStripMenuItem.Size = new System.Drawing.Size(270, 34);
       this.stayOnTopToolStripMenuItem.Text = "Stay on top";
       this.stayOnTopToolStripMenuItem.Click += new System.EventHandler(this.stayOnTop_Click);
       // 
@@ -603,14 +590,14 @@
       // 
       this.transparentToolStripMenuItem.Name = "transparentToolStripMenuItem";
       this.transparentToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.G)));
-      this.transparentToolStripMenuItem.Size = new System.Drawing.Size(268, 34);
+      this.transparentToolStripMenuItem.Size = new System.Drawing.Size(270, 34);
       this.transparentToolStripMenuItem.Text = "Transparent";
       this.transparentToolStripMenuItem.Click += new System.EventHandler(this.transparent_Click);
       // 
       // themeMenuItem
       // 
       this.themeMenuItem.Name = "themeMenuItem";
-      this.themeMenuItem.Size = new System.Drawing.Size(268, 34);
+      this.themeMenuItem.Size = new System.Drawing.Size(270, 34);
       this.themeMenuItem.Text = "Themes";
       // 
       // filterToolStripMenuItem
@@ -619,7 +606,7 @@
             this.filterCapturedEventsToolStripMenuItem,
             this.clearCapturedFiltersToolStripMenuItem});
       this.filterToolStripMenuItem.Name = "filterToolStripMenuItem";
-      this.filterToolStripMenuItem.Size = new System.Drawing.Size(66, 29);
+      this.filterToolStripMenuItem.Size = new System.Drawing.Size(66, 30);
       this.filterToolStripMenuItem.Text = "Filter";
       // 
       // filterCapturedEventsToolStripMenuItem
@@ -642,7 +629,7 @@
             this.checkForUpdatesToolStripMenuItem,
             this.aboutToolStripMenuItem});
       this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-      this.helpToolStripMenuItem.Size = new System.Drawing.Size(65, 29);
+      this.helpToolStripMenuItem.Size = new System.Drawing.Size(65, 30);
       this.helpToolStripMenuItem.Text = "Help";
       // 
       // checkForUpdatesToolStripMenuItem
@@ -661,16 +648,16 @@
       // 
       // MainForm
       // 
-      this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 25F);
+      this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 21F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(1631, 981);
+      this.ClientSize = new System.Drawing.Size(1468, 824);
       this.Controls.Add(this.splitContainer1);
       this.Controls.Add(this.toolStrip1);
       this.Controls.Add(this.statusStrip1);
       this.Controls.Add(this.mainMenu);
-      this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+      this.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
       this.MainMenuStrip = this.mainMenu;
-      this.Margin = new System.Windows.Forms.Padding(4, 6, 4, 6);
+      this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
       this.Name = "MainForm";
       this.Text = "SqlProfiler v1.0";
       this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
@@ -687,75 +674,74 @@
       this.ResumeLayout(false);
       this.PerformLayout();
 
-		}
+    }
 
-		#endregion
+    #endregion
 
-		private System.Windows.Forms.StatusStrip statusStrip1;
-		private System.Windows.Forms.ToolStrip toolStrip1;
-		private System.Windows.Forms.ToolStripButton tbStop;
-		private System.Windows.Forms.SplitContainer splitContainer1;
-		private System.Windows.Forms.RichTextBox reTextData;
-		private System.Windows.Forms.ToolStripButton tbScroll;
-		private System.Windows.Forms.ToolStripButton tbPause;
-		private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
-		private System.Windows.Forms.Timer timer1;
-		private System.Windows.Forms.ToolStripLabel toolStripLabel1;
-		private System.Windows.Forms.ToolStripTextBox edServer;
-		private System.Windows.Forms.ToolStripLabel toolStripLabel2;
-		private System.Windows.Forms.ToolStripTextBox edUser;
-		private System.Windows.Forms.ToolStripLabel toolStripLabel3;
-		private System.Windows.Forms.ToolStripTextBox edPassword;
-		private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
-		private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
-		private System.Windows.Forms.ToolStripComboBox tbAuth;
-		private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
-		private System.Windows.Forms.ToolStripButton tbClear;
-		private System.Windows.Forms.ContextMenuStrip contextMenu;
-		private System.Windows.Forms.ToolStripMenuItem copyAllToClipboardToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem copySelectedToClipboardToolStripMenuItem;
-		private System.Windows.Forms.MenuStrip mainMenu;
-		private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem startTraceToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem pauseTraceToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem stopTraceToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem clearTraceWindowToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
-		private System.Windows.Forms.ToolStripMenuItem extractAllEventsToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem extractSelectedEventsToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem findToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
-		private System.Windows.Forms.ToolStripMenuItem selectAllToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem findNextToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
-		private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSplitButton tbStart;
-		private System.Windows.Forms.ToolStripMenuItem tbRun;
-		private System.Windows.Forms.ToolStripMenuItem tbRunWithFilters;
-		private System.Windows.Forms.ToolStripMenuItem mnRun;
-		private System.Windows.Forms.ToolStripMenuItem mnRunWithFilters;
-		private System.Windows.Forms.ToolStripStatusLabel slEPS;
-		private System.Windows.Forms.ToolStripMenuItem copyToXlsToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
-		private System.Windows.Forms.ToolStripMenuItem copyAllForExcelToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem viewToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem stayOnTopToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem transparentToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem themeMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem deleteSelectedToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem keepSelectedToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem filterToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem filterCapturedEventsToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem clearCapturedFiltersToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
-		private System.Windows.Forms.ToolStripMenuItem saveAllEventsToExcelXmlFileToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
-		private System.Windows.Forms.ToolStripButton tbFilterEvents;
+    private System.Windows.Forms.StatusStrip statusStrip1;
+    private System.Windows.Forms.ToolStrip toolStrip1;
+    private System.Windows.Forms.ToolStripButton tbStop;
+    private System.Windows.Forms.SplitContainer splitContainer1;
+    private System.Windows.Forms.RichTextBox reTextData;
+    private System.Windows.Forms.ToolStripButton tbPause;
+    private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
+    private System.Windows.Forms.Timer timer1;
+    private System.Windows.Forms.ToolStripLabel toolStripLabel1;
+    private System.Windows.Forms.ToolStripTextBox edServer;
+    private System.Windows.Forms.ToolStripLabel toolStripLabel2;
+    private System.Windows.Forms.ToolStripTextBox edUser;
+    private System.Windows.Forms.ToolStripLabel toolStripLabel3;
+    private System.Windows.Forms.ToolStripTextBox edPassword;
+    private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+    private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
+    private System.Windows.Forms.ToolStripComboBox tbAuth;
+    private System.Windows.Forms.ToolStripButton tbClear;
+    private System.Windows.Forms.ContextMenuStrip contextMenu;
+    private System.Windows.Forms.ToolStripMenuItem copyAllToClipboardToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem copySelectedToClipboardToolStripMenuItem;
+    private System.Windows.Forms.MenuStrip mainMenu;
+    private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem startTraceToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem pauseTraceToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem stopTraceToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem clearTraceWindowToolStripMenuItem;
+    private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+    private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
+    private System.Windows.Forms.ToolStripMenuItem extractAllEventsToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem extractSelectedEventsToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem findToolStripMenuItem;
+    private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
+    private System.Windows.Forms.ToolStripMenuItem selectAllToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem findNextToolStripMenuItem;
+    private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
+    private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
+    private System.Windows.Forms.ToolStripSplitButton tbStart;
+    private System.Windows.Forms.ToolStripMenuItem tbRun;
+    private System.Windows.Forms.ToolStripMenuItem tbRunWithFilters;
+    private System.Windows.Forms.ToolStripMenuItem mnRun;
+    private System.Windows.Forms.ToolStripMenuItem mnRunWithFilters;
+    private System.Windows.Forms.ToolStripStatusLabel slEPS;
+    private System.Windows.Forms.ToolStripMenuItem copyToXlsToolStripMenuItem;
+    private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+    private System.Windows.Forms.ToolStripMenuItem copyAllForExcelToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem viewToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem stayOnTopToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem transparentToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem themeMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem deleteSelectedToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem keepSelectedToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem filterToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem filterCapturedEventsToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem clearCapturedFiltersToolStripMenuItem;
+    private System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
+    private System.Windows.Forms.ToolStripMenuItem saveAllEventsToExcelXmlFileToolStripMenuItem;
+    private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
+    private System.Windows.Forms.ToolStripButton tbFilterEvents;
     private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem storeSeiingsInFileToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem autoScrollToolStripMenuItem;
   }
 }

@@ -63,6 +63,7 @@ namespace SqlProfiler {
     private int fixedColumnIndex = 1;
     internal bool matchCase = false;
     internal bool wholeWord = false;
+    internal bool wrapAround = false;
     private readonly PersistentSettings settings;
 
     public MainForm() {
@@ -85,6 +86,8 @@ namespace SqlProfiler {
         settings.IsPortable = portable.Value;
       };
 
+      var autoScroll = new UserOption("autoScroll", true, autoScrollToolStripMenuItem, settings);
+
       edServer.Text = settings.GetValue("Server", ".");
       edUser.Text = settings.GetValue("User", "sa");
       edPassword.Text = settings.GetValue("Password", "sa");
@@ -99,6 +102,10 @@ namespace SqlProfiler {
         Top = settings.GetValue("Top", Screen.PrimaryScreen.WorkingArea.Top + Height / 2);
         Height = settings.GetValue("Height", Screen.PrimaryScreen.WorkingArea.Height / 2);
         Width = settings.GetValue("Width", Screen.PrimaryScreen.WorkingArea.Width / 2);
+
+        matchCase = settings.GetValue("MatchCase", false);
+        wholeWord = settings.GetValue("WholeWord", false);
+        wrapAround = settings.GetValue("WrapAround", false);
       };
 
       Closing += (sender, args) => {
@@ -106,6 +113,10 @@ namespace SqlProfiler {
         settings.SetValue("Top", Top);
         settings.SetValue("Height", Height);
         settings.SetValue("Width", Width);
+        
+        settings.SetValue("MatchCase", matchCase);
+        settings.SetValue("WholeWord", wholeWord);
+        settings.SetValue("WrapAround", wrapAround);
       };
 
       Updater.Subscribe(
@@ -551,9 +562,9 @@ namespace SqlProfiler {
         m_Cached.Add(lvi);
         if (last) {
           lvEvents.VirtualListSize = m_Cached.Count;
-          if (tbScroll.Checked) {
+          if (autoScrollToolStripMenuItem.Checked) {
             lvEvents.SelectedIndices.Clear();
-            FocusLVI(lvEvents.Items[m_Cached.Count - 1], tbScroll.Checked);
+            FocusLVI(lvEvents.Items[m_Cached.Count - 1], autoScrollToolStripMenuItem.Checked);
           }
           //FocusLVI(tbScroll.Checked ? lvEvents.Items[m_Cached.Count - 1] : current, tbScroll.Checked);
           lvEvents.Invalidate(lvi.Bounds);
