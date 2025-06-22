@@ -128,7 +128,7 @@ namespace SqlProfiler {
 
     #region themes
 
-    private void OnCurrentThemeChecnged() {
+    private void OnCurrentThemeChanged() {
       m_Lex.DefaultColor = Theme.Current.ForegroundColor;
       m_Lex.KeywordColor = Theme.Current.SelectedBackgroundColor;
       m_Lex.GreyKeywordColor = Theme.Current.InfoColor;
@@ -142,9 +142,9 @@ namespace SqlProfiler {
       mainMenu.Renderer = new ThemedToolStripRenderer();
       toolStrip1.Renderer = new ThemedToolStripRenderer();
       contextMenu.Renderer = new ThemedToolStripRenderer();
-      Theme.OnCurrentChecnged -= OnCurrentThemeChecnged;
-      OnCurrentThemeChecnged(); //apply current theme colors
-      Theme.OnCurrentChecnged += OnCurrentThemeChecnged;
+      Theme.OnCurrentChanged -= OnCurrentThemeChanged;
+      OnCurrentThemeChanged(); //apply current theme colors
+      Theme.OnCurrentChanged += OnCurrentThemeChanged;
 
       if (Theme.SupportsAutoThemeSwitching()) {
         var autoThemeMenuItem = new ToolStripRadioButtonMenuItem("Auto");
@@ -1401,7 +1401,7 @@ namespace SqlProfiler {
     }
 
     private void mnAbout_Click(object sender, EventArgs e) {
-      MessageBox.Show($"{Updater.ApplicationTitle} {Updater.CurrentVersion} {(Environment.Is64BitProcess ? "x64" : "x32")}\nWritten by Sergiy Egoshyn (egoshin.sergey@gmail.com)", Updater.ApplicationTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
+      Updater.ShowAbout();
     }
 
     private void stayOnTop_Click(object sender, EventArgs e) {
