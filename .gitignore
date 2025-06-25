@@ -296,3 +296,5 @@ packages
 pingme.txt
 .build/paket.lock
 /sources/sqlimposter.cmd/Dotfuscated
+
+/SqlProfiler/FodyWeavers.xsd

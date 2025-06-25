@@ -87,6 +87,7 @@
       this.filterCapturedEventsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.clearCapturedFiltersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.siteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.checkForUpdatesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.statusStrip1.SuspendLayout();
@@ -616,16 +617,26 @@
       // helpToolStripMenuItem
       // 
       this.helpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.siteToolStripMenuItem,
             this.checkForUpdatesToolStripMenuItem,
             this.aboutToolStripMenuItem});
       this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
       this.helpToolStripMenuItem.Size = new System.Drawing.Size(65, 30);
       this.helpToolStripMenuItem.Text = "Help";
       // 
+      // siteToolStripMenuItem
+      // 
+      this.siteToolStripMenuItem.Name = "siteToolStripMenuItem";
+      this.siteToolStripMenuItem.Size = new System.Drawing.Size(258, 34);
+      this.siteToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F1;
+      this.siteToolStripMenuItem.Text = "Site";
+      this.siteToolStripMenuItem.Click += new System.EventHandler(this.siteToolStripMenuItem_Click);
+      // 
       // checkForUpdatesToolStripMenuItem
       // 
       this.checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
       this.checkForUpdatesToolStripMenuItem.Size = new System.Drawing.Size(258, 34);
+      this.checkForUpdatesToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.U;
       this.checkForUpdatesToolStripMenuItem.Text = "Check for updates";
       this.checkForUpdatesToolStripMenuItem.Click += new System.EventHandler(this.checkForUpdatesToolStripMenuItem_Click);
       // 
@@ -633,6 +644,7 @@
       // 
       this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
       this.aboutToolStripMenuItem.Size = new System.Drawing.Size(258, 34);
+      this.aboutToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F1;
       this.aboutToolStripMenuItem.Text = "About";
       this.aboutToolStripMenuItem.Click += new System.EventHandler(this.mnAbout_Click);
       // 
@@ -728,6 +740,7 @@
     private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
     private System.Windows.Forms.ToolStripButton tbFilterEvents;
     private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem siteToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem storeSeiingsInFileToolStripMenuItem;
