@@ -103,22 +103,17 @@ namespace SqlProfiler {
 
       Updater.Subscribe(
         (message, isError) => {
-          MessageBox.Show(message, Updater.ApplicationName, MessageBoxButtons.OK, isError ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+          if (InvokeRequired)
+            Invoke(new Action(() => MessageBox.Show(message, Updater.ApplicationName, MessageBoxButtons.OK, isError ? MessageBoxIcon.Warning : MessageBoxIcon.Information)));
+          else
+            MessageBox.Show(message, Updater.ApplicationName, MessageBoxButtons.OK, isError ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
         },
-        (message) => {
-          return MessageBox.Show(message, Updater.ApplicationName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK;
-        },
-        Application.Exit
+        message => InvokeRequired
+          ? (bool)Invoke(new Func<bool>(() => MessageBox.Show(this, message, Updater.ApplicationName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK))
+          : MessageBox.Show(this, message, Updater.ApplicationName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK,
+        () => { exitToolStripMenuItem_Click(null, EventArgs.Empty); }
       );
-
-      var timer = new System.Windows.Forms.Timer();
-      timer.Tick += async (_, _) => {
-        timer.Enabled = false;
-        timer.Enabled = !await Updater.CheckForUpdatesAsync(true);
-      };
-      timer.Interval = 3000;
-      timer.Enabled = true;
-
+      
       InitializeTheme();
 
       this.Load += (s, e) => {
@@ -1591,7 +1586,7 @@ namespace SqlProfiler {
     }
 
     private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e) {
-      Updater.CheckForUpdates(false);
+      Updater.CheckForUpdates(Updater.CheckUpdatesMode.AllMessages);
     }
 
     private void tbFilterEvents_Click(object sender, EventArgs e) {
