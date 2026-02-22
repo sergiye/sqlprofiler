@@ -62,9 +62,9 @@ Can be used to set default GUI values
 The sqlprofiler team welcomes feedback and contributions!<br/>
 You can check if it works properly on your PC. If you notice any inaccuracies, please send us a pull request. If you have any suggestions or improvements, don't hesitate to create an issue.
 
-Also, don't forget to star the repository to help other people find it.
+Also, don't forget to ★ star ★ the repository to help other people find it.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=sergiye/sqlprofiler&type=Date)](https://star-history.com/#sergiye/sqlprofiler&Date)
+<!-- [![Star History Chart](https://api.star-history.com/svg?repos=sergiye/sqlprofiler&type=Date)](https://star-history.com/#sergiye/sqlprofiler&Date) -->
 
 [![Stargazers repo roster for @sergiye/sqlprofiler](https://reporoster.com/stars/sergiye/sqlprofiler)](https://github.com/sergiye/sqlprofiler/stargazers)
 
@@ -73,7 +73,4 @@ Every [cup of coffee](https://patreon.com/SergiyE) you donate will help this app
 
 ## License
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
