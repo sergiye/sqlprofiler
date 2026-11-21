@@ -23,10 +23,11 @@ namespace SqlProfiler {
 
     private static readonly HashSet<string> ClauseKeywords = new(StringComparer.OrdinalIgnoreCase) {
       "SELECT", "FROM", "WHERE", "HAVING", "UNION", "EXCEPT", "INTERSECT", "INSERT", "UPDATE", "DELETE", "SET", "VALUES",
-      "DECLARE", "MERGE", "GROUP", "ORDER"
+      "DECLARE", "MERGE", "GROUP", "ORDER", "EXEC", "EXECUTE"
     };
 
-    private static readonly HashSet<string> ListClauses = new(StringComparer.OrdinalIgnoreCase) {"SELECT", "SET", "GROUP", "ORDER"};
+    // the arguments of a call (exec) are listed one per line too
+    private static readonly HashSet<string> ListClauses = new(StringComparer.OrdinalIgnoreCase) {"SELECT", "SET", "GROUP", "ORDER", "EXEC", "EXECUTE"};
     private static readonly HashSet<string> ConditionClauses = new(StringComparer.OrdinalIgnoreCase) {"WHERE", "HAVING", "ON"};
     private static readonly HashSet<string> JoinPrefixes = new(StringComparer.OrdinalIgnoreCase) {"INNER", "LEFT", "RIGHT", "FULL", "CROSS"};
     private static readonly HashSet<string> JoinParts = new(StringComparer.OrdinalIgnoreCase) {"INNER", "LEFT", "RIGHT", "FULL", "CROSS", "OUTER", "JOIN"};
@@ -34,7 +35,7 @@ namespace SqlProfiler {
     public static string Format(string sql) {
       if (string.IsNullOrWhiteSpace(sql)) return sql ?? "";
 
-      var tokens = new YukonLexer().Tokenize(sql);
+      var tokens = QueryNormalizer.Merge(new YukonLexer().Tokenize(sql));
       var sb = new StringBuilder();
       var clauses = new Stack<string>();
       clauses.Push("");
@@ -60,6 +61,10 @@ namespace SqlProfiler {
 
         var text = token.Text;
         var isWord = token.Kind != YukonLexer.TokenKind.tkString && token.Kind != YukonLexer.TokenKind.tkComment;
+        var isUnicodePrefix = (text == "N" || text == "n") && i + 1 < tokens.Count && tokens[i + 1].Kind == YukonLexer.TokenKind.tkString;
+        // the query that sp_executesql runs is written as a string: the text of this string is formatted too
+        if (token.Kind == YukonLexer.TokenKind.tkString && string.Equals(previous, "sp_executesql", StringComparison.OrdinalIgnoreCase))
+          text = FormatExecuteSqlText(text);
         var level = clauses.Count - 1;
         var newline = forceNewline;
         var indent = level * IndentSize;
@@ -124,10 +129,17 @@ namespace SqlProfiler {
         if (token.Kind == YukonLexer.TokenKind.tkComment && text.StartsWith("--", StringComparison.Ordinal))
           forceNewline = true;
 
-        previous = isWord ? text : previous;
+        if (isWord && !isUnicodePrefix) previous = text;
       }
 
       return sb.ToString().Trim();
+    }
+
+    private static string FormatExecuteSqlText(string literal) {
+      if (literal.Length < 2 || literal[0] != '\'' || literal[literal.Length - 1] != '\'') return literal;
+      var inner = literal.Substring(1, literal.Length - 2).Replace("''", "'");
+      if (string.IsNullOrWhiteSpace(inner)) return literal;
+      return "'\r\n" + Format(inner).Replace("'", "''") + "'";
     }
 
     private static void SetClause(Stack<string> clauses, string clause) {
