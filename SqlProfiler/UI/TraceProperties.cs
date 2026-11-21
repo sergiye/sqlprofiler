@@ -1,9 +1,7 @@
 ﻿using sergiye.Common;
 using System;
 using System.ComponentModel;
-using System.IO;
 using System.Windows.Forms;
-using System.Xml.Serialization;
 
 namespace SqlProfiler {
   public partial class TraceProperties : Form {
@@ -97,14 +95,6 @@ namespace SqlProfiler {
         WritesFilterCondition = IntFilterCondition.GreaterThan,
         DurationFilterCondition = IntFilterCondition.GreaterThan
       };
-
-      public string GetAsXmlString() {
-        XmlSerializer x = new XmlSerializer(typeof(TraceSettings));
-        using (StringWriter sw = new StringWriter()) {
-          x.Serialize(sw, this);
-          return sw.ToString();
-        }
-      }
 
       public static TraceSettings GetDefaultSettings() {
         return new TraceSettings();

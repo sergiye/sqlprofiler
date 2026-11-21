@@ -44,9 +44,5 @@ namespace SqlProfiler {
       mainForm.lastpattern = edPattern.Text;
       mainForm.PerformFind(forwards, cbxWrapAround.Checked);
     }
-
-    private void edPattern_TextChanged(object sender, EventArgs e) {
-      mainForm.lastpos = -1;
-    }
   }
 }

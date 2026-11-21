@@ -57,26 +57,6 @@ namespace SqlProfiler {
       return idx >= m_Line.Length ? '\x00' : m_Line[idx];
     }
 
-    public string StandardSql(string sql) {
-      StringBuilder result = new StringBuilder();
-      Line = sql;
-      while (TokenId != TokenKind.tkNull) {
-        switch (TokenId) {
-          case TokenKind.tkNumber:
-          case TokenKind.tkString:
-            result.Append("<??>");
-            break;
-          default:
-            result.Append(Token);
-            break;
-        }
-
-        Next();
-      }
-
-      return result.ToString();
-    }
-
     public YukonLexer() {
       Array.Sort(m_IdentifiersArray);
     }

@@ -31,8 +31,6 @@ namespace SqlProfiler {
     private readonly ProfilerEvent m_EventPaused = new ProfilerEvent();
     private readonly List<ListViewItem> m_Cached = new List<ListViewItem>(1024);
     private readonly List<ListViewItem> m_CachedUnFiltered = new List<ListViewItem>(1024);
-    private readonly Dictionary<string, ListViewItem> m_itembysql = new Dictionary<string, ListViewItem>();
-    internal int lastpos = -1;
     internal string lastpattern = "";
     private ListViewNF lvEvents;
     Queue<ProfilerEvent> m_events = new Queue<ProfilerEvent>(10);
@@ -793,7 +791,6 @@ namespace SqlProfiler {
           "SqlProfiler");
         m_Cached.Clear();
         m_events.Clear();
-        m_itembysql.Clear();
         lvEvents.VirtualListSize = 0;
         StartProfilerThread();
       }
@@ -1005,7 +1002,6 @@ namespace SqlProfiler {
     private void ClearTrace() {
       lock (m_Cached) {
         m_Cached.Clear();
-        m_itembysql.Clear();
         lvEvents.VirtualListSize = 0;
         lvEvents_ItemSelectionChanged(lvEvents, null);
         lvEvents.Invalidate();
@@ -1127,33 +1123,6 @@ namespace SqlProfiler {
       }
     }
 
-    //internal void PerformFind(bool forwards)
-    //{
-    //    if(String.IsNullOrEmpty(lastpattern)) return;
-
-    //    if (forwards)
-    //    {
-    //        for (int i = lastpos = lvEvents.Items.IndexOf(lvEvents.FocusedItem) + 1; i < m_Cached.Count; i++)
-    //        {
-    //            if (FindText(i))
-    //            {
-    //                return;
-    //            }
-    //        }
-    //    }
-    //    else
-    //    {
-    //        for (int i = lastpos = lvEvents.Items.IndexOf(lvEvents.FocusedItem) - 1; i > 0; i--)
-    //        {
-    //            if (FindText(i))
-    //            {
-    //                return;
-    //            }
-    //        }
-    //    }
-    //    MessageBox.Show(String.Format("Failed to find \"{0}\". Searched to the end of data. ", lastpattern), "SqlProfiler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    //}
-
     internal void PerformFind(bool forwards, bool wrapAround) {
       if (string.IsNullOrEmpty(lastpattern)) return;
       var lastpos = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
@@ -1199,7 +1168,6 @@ namespace SqlProfiler {
         var evt = (ProfilerEvent) lvi.Tag;
 
         lvi.Focused = true;
-        lastpos = focusedIndex;
         SelectAllEvents(false);
         FocusLVI(lvi, true);
       }
@@ -1212,7 +1180,6 @@ namespace SqlProfiler {
       var pattern = wholeWord ? "\\b" + escaped + "\\b" : escaped;
       if (Regex.IsMatch(evt.TextData, pattern, (matchCase ? RegexOptions.None : RegexOptions.IgnoreCase))) {
         lvi.Focused = true;
-        lastpos = i;
         SelectAllEvents(false);
         FocusLVI(lvi, true);
         return true;

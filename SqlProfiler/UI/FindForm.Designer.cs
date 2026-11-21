@@ -43,7 +43,6 @@
       this.edPattern.Name = "edPattern";
       this.edPattern.Size = new System.Drawing.Size(461, 26);
       this.edPattern.TabIndex = 1;
-      this.edPattern.TextChanged += new System.EventHandler(this.edPattern_TextChanged);
       // 
       // label1
       // 

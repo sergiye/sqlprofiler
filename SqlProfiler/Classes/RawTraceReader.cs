@@ -1300,15 +1300,6 @@ order by trace_column_id
       return (value[0]) | (value[1] << 8);
     }
 
-    public static string BuildEventSql(int traceid, int eventId, params int[] columns) {
-      var sb = new StringBuilder();
-      foreach (var i in columns) {
-        sb.AppendFormat("\r\n exec sp_trace_setevent {0}, {1}, {2}, @on", traceid, eventId, i);
-      }
-
-      return sb.ToString();
-    }
-
     public void SetEvent(int eventId, params int[] columns) {
       using var cmd = new SqlCommand
         {Connection = m_Conn, CommandText = "sp_trace_setevent", CommandType = CommandType.StoredProcedure};
