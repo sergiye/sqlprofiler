@@ -298,3 +298,5 @@ pingme.txt
 /sources/sqlimposter.cmd/Dotfuscated
 
 /SqlProfiler/FodyWeavers.xsd
+/.claude/
+/.mcp.json
