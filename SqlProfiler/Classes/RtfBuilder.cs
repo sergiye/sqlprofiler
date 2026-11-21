@@ -75,7 +75,7 @@ namespace SqlProfiler {
     private static string CheckChar(string value) {
       if (!string.IsNullOrEmpty(value)) {
         if (value.IndexOfAny(Slashable) >= 0) {
-          value = value.Replace("{", "\\{").Replace("}", "\\}").Replace("\\", "\\\\");
+          value = value.Replace("\\", "\\\\").Replace("{", "\\{").Replace("}", "\\}");
         }
 
         bool replaceuni = false;
@@ -94,7 +94,7 @@ namespace SqlProfiler {
             }
             else {
               sb.Append("\\u");
-              sb.Append((int) value[i]);
+              sb.Append((short) value[i]);
               sb.Append("?");
             }
           }
