@@ -15,10 +15,10 @@ namespace SqlProfiler {
       this.mainForm = mainForm;
 
       // Set the control values to the last find performed.
-      edPattern.Text = mainForm.lastpattern;
-      cbxMatchCase.Checked = mainForm.matchCase;
-      cbxWholeWord.Checked = mainForm.wholeWord;
-      cbxWrapAround.Checked = mainForm.wrapAround;
+      edPattern.Text = mainForm.LastPattern;
+      cbxMatchCase.Checked = mainForm.MatchCase;
+      cbxWholeWord.Checked = mainForm.WholeWord;
+      cbxWrapAround.Checked = mainForm.WrapAround;
       ThemeSupport.Attach(this);
 
       Shown += (s, e) => {
@@ -26,9 +26,9 @@ namespace SqlProfiler {
       };
 
       FormClosing += (s, e) => {
-        mainForm.matchCase = cbxMatchCase.Checked;
-        mainForm.wholeWord = cbxWholeWord.Checked;
-        mainForm.wrapAround = cbxWrapAround.Checked;
+        mainForm.MatchCase = cbxMatchCase.Checked;
+        mainForm.WholeWord = cbxWholeWord.Checked;
+        mainForm.WrapAround = cbxWrapAround.Checked;
       };
     }
 
@@ -41,7 +41,7 @@ namespace SqlProfiler {
     }
 
     private void DoFind(bool forwards) {
-      mainForm.lastpattern = edPattern.Text;
+      mainForm.LastPattern = edPattern.Text;
       mainForm.PerformFind(forwards, cbxWrapAround.Checked);
     }
   }

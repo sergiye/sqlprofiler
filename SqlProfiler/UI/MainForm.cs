@@ -1,62 +1,52 @@
 ﻿using sergiye.Common;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 
 namespace SqlProfiler {
 
   public partial class MainForm : Form {
-    
-    private RawTraceReader m_Rdr;
-    private readonly object m_eventsLock = new();
 
-    private readonly YukonLexer m_Lex = new YukonLexer();
-    private SqlConnection m_Conn;
-    private CancellationTokenSource m_readerCts;
-    private Task m_readerTask;
-    private ProfilingStateEnum m_ProfilingState;
-    private int m_EventCount;
-    private readonly ProfilerEvent m_EventStarted = new();
-    private readonly ProfilerEvent m_EventStopped = new();
-    private readonly ProfilerEvent m_EventPaused = new();
-    private readonly List<ListViewItem> m_Cached = new(1024);
-    private readonly List<ListViewItem> m_CachedUnFiltered = new(1024);
-    internal string lastpattern = "";
-    private ListViewNF lvEvents;
-    Queue<ProfilerEvent> m_events = new(10);
-    private bool m_autostart;
-    private bool dontUpdateSource;
-    private Exception m_profilerexception;
-    private readonly Queue<PerfInfo> m_perf = new();
-    private PerfInfo m_first, m_prev;
-    private TraceProperties.TraceSettings m_currentsettings;
-    private readonly List<PerfColumn> m_columns = new();
-    private int fixedColumnIndex = 1;
     private const int MinFixedColumnWidth = 150;
-    internal bool matchCase;
-    internal bool wholeWord;
-    internal bool wrapAround;
-    private readonly PersistentSettings settings;
-    private UserOption m_encrypt;
-    private UserOption m_trustCertificate;
+
+    private readonly PersistentSettings _settings;
+    private readonly YukonLexer _lexer = new();
+    private readonly TraceSession _session;
+    private readonly EventRateMeter _rateMeter = new();
+    private readonly List<EventRow> _rows = new(1024);
+    private readonly List<EventRow> _unfilteredRows = new(1024);
+    private readonly ProfilerEvent _startedEvent = new();
+    private readonly ProfilerEvent _stoppedEvent = new();
+    private readonly ProfilerEvent _pausedEvent = new();
+    private List<PerfColumn> _columns = new();
+    private ListViewNF lvEvents;
+    private TraceProperties.TraceSettings _traceSettings;
+    private int _eventCount;
+    private bool _autoStart;
+    private bool _dontUpdateSource;
+    private int[] _prevSelectedIndices;
+    private UserOption _encrypt;
+    private UserOption _trustCertificate;
+
+    internal string LastPattern { get; set; } = "";
+    internal bool MatchCase { get; set; }
+    internal bool WholeWord { get; set; }
+    internal bool WrapAround { get; set; }
 
     public MainForm() {
-      settings = new PersistentSettings();
-      settings.Load();
-      ThemeSupport.Initialize(settings.GetValue("Theme", ""), id => settings.SetValue("Theme", id), "SqlProfiler.themes");
+      _settings = new PersistentSettings();
+      _settings.Load();
+      ThemeSupport.Initialize(_settings.GetValue("Theme", ""), id => _settings.SetValue("Theme", id), "SqlProfiler.themes");
 
       InitializeComponent();
+      _session = new TraceSession(CreateConnection);
       tbStart.DefaultItem = tbRun;
       Icon = Icon.ExtractAssociatedIcon(Updater.CurrentFileLocation);
       Text = $"{Updater.ApplicationName} {(Environment.Is64BitProcess ? "x64" : "x32")} - {Updater.CurrentVersion}";
@@ -65,55 +55,60 @@ namespace SqlProfiler {
 
       ThemedWindowTitle.Attach(this, mainMenu, WindowTitleStyle.ThemeColors);
 
-      m_currentsettings = TraceProperties.TraceSettings.GetDefaultSettings();
+      _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
       InitLV();
 
-      var portable = new UserOption("portable", true, storeSettingsInFileToolStripMenuItem, settings);
+      var portable = new UserOption("portable", true, storeSettingsInFileToolStripMenuItem, _settings);
       portable.Changed += delegate {
-        settings.IsPortable = portable.Value;
+        _settings.IsPortable = portable.Value;
       };
 
-      var autoScroll = new UserOption("autoScroll", true, autoScrollToolStripMenuItem, settings);
+      _ = new UserOption("autoScroll", true, autoScrollToolStripMenuItem, _settings);
 
       var encryptItem = new ToolStripMenuItem("Encrypt connection");
       var trustCertificateItem = new ToolStripMenuItem("Trust server certificate");
       var insertAt = fileToolStripMenuItem.DropDownItems.IndexOf(storeSettingsInFileToolStripMenuItem) + 1;
       fileToolStripMenuItem.DropDownItems.Insert(insertAt, encryptItem);
       fileToolStripMenuItem.DropDownItems.Insert(insertAt + 1, trustCertificateItem);
-      m_encrypt = new UserOption("encrypt", false, encryptItem, settings);
-      m_trustCertificate = new UserOption("trustServerCertificate", true, trustCertificateItem, settings);
+      _encrypt = new UserOption("encrypt", false, encryptItem, _settings);
+      _trustCertificate = new UserOption("trustServerCertificate", true, trustCertificateItem, _settings);
 
-      edServer.Text = settings.GetValue("Server", ".");
-      edUser.Text = settings.GetValue("User", "sa");
-      edPassword.Text = settings.GetValue("Password", "sa");
+      var openLogItem = new ToolStripMenuItem("Open log file", null, (_, _) => OpenLogFile());
+      helpToolStripMenuItem.DropDownItems.Insert(helpToolStripMenuItem.DropDownItems.IndexOf(aboutToolStripMenuItem), openLogItem);
+
+      edServer.Text = _settings.GetValue("Server", ".");
+      edUser.Text = _settings.GetValue("User", "sa");
+      edPassword.Text = _settings.GetValue("Password", "sa");
       tbAuth.SelectedIndex = string.IsNullOrEmpty(edUser.Text) ? 0 : 1;
-      if (m_autostart) RunProfiling(false);
+      if (_autoStart) RunProfiling(false);
       UpdateButtons();
 
       MinimumSize = new Size(1100, 666);
-      
-      Load += (sender, args) => {
-        Left = settings.GetValue("Left", Screen.PrimaryScreen.WorkingArea.Left + Width / 2);
-        Top = settings.GetValue("Top", Screen.PrimaryScreen.WorkingArea.Top + Height / 2);
-        Height = settings.GetValue("Height", Screen.PrimaryScreen.WorkingArea.Height / 2);
-        Width = settings.GetValue("Width", Screen.PrimaryScreen.WorkingArea.Width / 2);
 
-        matchCase = settings.GetValue("MatchCase", false);
-        wholeWord = settings.GetValue("WholeWord", false);
-        wrapAround = settings.GetValue("WrapAround", false);
+      Load += (_, _) => {
+        Left = _settings.GetValue("Left", Screen.PrimaryScreen.WorkingArea.Left + Width / 2);
+        Top = _settings.GetValue("Top", Screen.PrimaryScreen.WorkingArea.Top + Height / 2);
+        Height = _settings.GetValue("Height", Screen.PrimaryScreen.WorkingArea.Height / 2);
+        Width = _settings.GetValue("Width", Screen.PrimaryScreen.WorkingArea.Width / 2);
+
+        MatchCase = _settings.GetValue("MatchCase", false);
+        WholeWord = _settings.GetValue("WholeWord", false);
+        WrapAround = _settings.GetValue("WrapAround", false);
       };
 
-      Closing += (sender, args) => {
-        settings.SetValue("Left", Left);
-        settings.SetValue("Top", Top);
-        settings.SetValue("Height", Height);
-        settings.SetValue("Width", Width);
-        
-        settings.SetValue("MatchCase", matchCase);
-        settings.SetValue("WholeWord", wholeWord);
-        settings.SetValue("WrapAround", wrapAround);
+      Closing += (_, _) => {
+        _settings.SetValue("Left", Left);
+        _settings.SetValue("Top", Top);
+        _settings.SetValue("Height", Height);
+        _settings.SetValue("Width", Width);
+
+        _settings.SetValue("MatchCase", MatchCase);
+        _settings.SetValue("WholeWord", WholeWord);
+        _settings.SetValue("WrapAround", WrapAround);
       };
+
+      FormClosed += (_, _) => _session.Dispose();
 
       Updater.Subscribe(
         (message, isError) => {
@@ -127,23 +122,23 @@ namespace SqlProfiler {
           : MessageBox.Show(this, message, Updater.ApplicationName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK,
         () => { ExitToolStripMenuItem_Click(null, EventArgs.Empty); }
       );
-      
+
       InitializeTheme();
 
-      this.Load += (s, e) => {
-        this.Width += 1;
+      Load += (_, _) => {
+        Width += 1;
       };
     }
 
     #region themes
 
     private void OnCurrentThemeChanged() {
-      m_Lex.DefaultColor = Theme.Current.ForegroundColor;
-      m_Lex.KeywordColor = Theme.Current.SelectedBackgroundColor;
-      m_Lex.GreyKeywordColor = Theme.Current.InfoColor;
-      m_Lex.FunctionColor = Theme.Current.HyperlinkColor;
-      m_Lex.ValueColor = Theme.Current.WarnColor;
-      m_Lex.CommentColor = Theme.Current.MessageColor;
+      _lexer.DefaultColor = Theme.Current.ForegroundColor;
+      _lexer.KeywordColor = Theme.Current.SelectedBackgroundColor;
+      _lexer.GreyKeywordColor = Theme.Current.InfoColor;
+      _lexer.FunctionColor = Theme.Current.HyperlinkColor;
+      _lexer.ValueColor = Theme.Current.WarnColor;
+      _lexer.CommentColor = Theme.Current.MessageColor;
     }
 
     private void InitializeTheme() {
@@ -178,9 +173,9 @@ namespace SqlProfiler {
 
     private void ParseCommandLine() {
       try {
-        m_autostart = CommandLineParser.Apply(Environment.GetCommandLineArgs(), m_currentsettings, settings.SetValue);
-        if (string.IsNullOrEmpty(settings.GetValue("Server", ""))) {
-          settings.SetValue("Server", @".\sqlexpress");
+        _autoStart = CommandLineParser.Apply(Environment.GetCommandLineArgs(), _traceSettings, _settings.SetValue);
+        if (string.IsNullOrEmpty(_settings.GetValue("Server", ""))) {
+          _settings.SetValue("Server", @".\sqlexpress");
         }
       }
       catch (Exception e) {
@@ -188,8 +183,28 @@ namespace SqlProfiler {
       }
     }
 
+    private SqlConnection CreateConnection() {
+      return ConnectionFactory.Create(new ConnectionOptions {
+        Server = edServer.Text,
+        IntegratedSecurity = tbAuth.SelectedIndex == 0,
+        User = edUser.Text,
+        Password = edPassword.Text,
+        Encrypt = _encrypt.Value,
+        TrustServerCertificate = _trustCertificate.Value
+      });
+    }
+
+    private void OpenLogFile() {
+      if (!File.Exists(AppLogger.FilePath)) {
+        MessageBox.Show("The log is empty.", Updater.ApplicationName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+      }
+
+      Process.Start(new ProcessStartInfo(AppLogger.FilePath) {UseShellExecute = true});
+    }
+
     private void TbStart_Click(object sender, EventArgs e) {
-      if (!TraceProperties.AtLeastOneEventSelected(m_currentsettings)) {
+      if (!TraceProperties.AtLeastOneEventSelected(_traceSettings)) {
         MessageBox.Show("You should select at least 1 event", "Starting trace", MessageBoxButtons.OK,
           MessageBoxIcon.Error);
         RunProfiling(true);
@@ -200,31 +215,32 @@ namespace SqlProfiler {
     }
 
     private void UpdateButtons() {
-      tbStart.Enabled = m_ProfilingState == ProfilingStateEnum.psStopped ||
-                        m_ProfilingState == ProfilingStateEnum.psPaused;
+      var state = _session.State;
+      tbStart.Enabled = state == ProfilingStateEnum.psStopped || state == ProfilingStateEnum.psPaused;
       tbRun.Enabled = tbStart.Enabled;
       mnRun.Enabled = tbRun.Enabled;
-      tbRunWithFilters.Enabled = ProfilingStateEnum.psStopped == m_ProfilingState;
+      tbRunWithFilters.Enabled = state == ProfilingStateEnum.psStopped;
       mnRunWithFilters.Enabled = tbRunWithFilters.Enabled;
       startTraceToolStripMenuItem.Enabled = tbStart.Enabled;
-      tbStop.Enabled = m_ProfilingState == ProfilingStateEnum.psPaused ||
-                       m_ProfilingState == ProfilingStateEnum.psProfiling;
+      tbStop.Enabled = state == ProfilingStateEnum.psPaused || state == ProfilingStateEnum.psProfiling;
       stopTraceToolStripMenuItem.Enabled = tbStop.Enabled;
-      tbPause.Enabled = m_ProfilingState == ProfilingStateEnum.psProfiling;
+      tbPause.Enabled = state == ProfilingStateEnum.psProfiling;
       pauseTraceToolStripMenuItem.Enabled = tbPause.Enabled;
-      timer1.Enabled = m_ProfilingState == ProfilingStateEnum.psProfiling;
-      edServer.Enabled = m_ProfilingState == ProfilingStateEnum.psStopped;
-      tbAuth.Enabled = m_ProfilingState == ProfilingStateEnum.psStopped;
-      edUser.Enabled = edServer.Enabled && (tbAuth.SelectedIndex == 1);
-      edPassword.Enabled = edServer.Enabled && (tbAuth.SelectedIndex == 1);
+      timer1.Enabled = state == ProfilingStateEnum.psProfiling;
+      edServer.Enabled = state == ProfilingStateEnum.psStopped;
+      tbAuth.Enabled = state == ProfilingStateEnum.psStopped;
+      edUser.Enabled = edServer.Enabled && tbAuth.SelectedIndex == 1;
+      edPassword.Enabled = edServer.Enabled && tbAuth.SelectedIndex == 1;
     }
+
+    #region list
 
     private void InitLV() {
       lvEvents = new ListViewNF {
         Dock = DockStyle.Fill,
-        Location = new System.Drawing.Point(0, 0),
+        Location = new Point(0, 0),
         Name = "lvEvents",
-        Size = new System.Drawing.Size(979, 297),
+        Size = new Size(979, 297),
         TabIndex = 0,
         VirtualMode = true,
         UseCompatibleStateImageBehavior = false,
@@ -243,66 +259,17 @@ namespace SqlProfiler {
       lvEvents.VirtualItemsSelectionRangeChanged += LvEventsOnVirtualItemsSelectionRangeChanged;
       lvEvents.ContextMenuStrip = contextMenu;
       splitContainer1.Panel1.Controls.Add(lvEvents);
-      InitColumns();
       InitGridColumns();
     }
 
-    private void InitColumns() {
-      m_columns.Clear();
-      m_columns.Add(new PerfColumn {Caption = "Event Class", Column = ProfilerEventColumns.EventClass, Width = 122});
-      fixedColumnIndex = m_columns.Count;
-      m_columns.Add(new PerfColumn {Caption = "Text Data", Column = ProfilerEventColumns.TextData, Width = 255});
-      m_columns.Add(new PerfColumn {Caption = "Login Name", Column = ProfilerEventColumns.LoginName, Width = 79});
-      m_columns.Add(new PerfColumn {
-        Caption = "CPU", Column = ProfilerEventColumns.CPU, Width = 82, Alignment = HorizontalAlignment.Right,
-        Format = "#,0"
-      });
-      m_columns.Add(new PerfColumn {
-        Caption = "Reads", Column = ProfilerEventColumns.Reads, Width = 78, Alignment = HorizontalAlignment.Right,
-        Format = "#,0"
-      });
-      m_columns.Add(new PerfColumn {
-        Caption = "Writes", Column = ProfilerEventColumns.Writes, Width = 78, Alignment = HorizontalAlignment.Right,
-        Format = "#,0"
-      });
-      m_columns.Add(new PerfColumn {
-        Caption = "Duration, ms", Column = ProfilerEventColumns.Duration, Width = 82,
-        Alignment = HorizontalAlignment.Right, Format = "#,0"
-      });
-      m_columns.Add(new PerfColumn
-        {Caption = "SPID", Column = ProfilerEventColumns.SPID, Width = 50, Alignment = HorizontalAlignment.Right});
-
-      if (m_currentsettings.EventsColumns.StartTime)
-        m_columns.Add(new PerfColumn {
-          Caption = "Start time", Column = ProfilerEventColumns.StartTime, Width = 140,
-          Format = "yyyy-MM-dd HH:mm:ss.ffff"
-        });
-      if (m_currentsettings.EventsColumns.EndTime)
-        m_columns.Add(new PerfColumn {
-          Caption = "End time", Column = ProfilerEventColumns.EndTime, Width = 140, Format = "yyyy-MM-dd HH:mm:ss.ffff"
-        });
-      if (m_currentsettings.EventsColumns.DatabaseName)
-        m_columns.Add(new PerfColumn
-          {Caption = "DatabaseName", Column = ProfilerEventColumns.DatabaseName, Width = 70});
-      if (m_currentsettings.EventsColumns.ObjectName)
-        m_columns.Add(new PerfColumn {Caption = "Object name", Column = ProfilerEventColumns.ObjectName, Width = 70});
-      if (m_currentsettings.EventsColumns.ApplicationName)
-        m_columns.Add(new PerfColumn
-          {Caption = "Application name", Column = ProfilerEventColumns.ApplicationName, Width = 70});
-      if (m_currentsettings.EventsColumns.HostName)
-        m_columns.Add(new PerfColumn {Caption = "Host name", Column = ProfilerEventColumns.HostName, Width = 70});
-
-      m_columns.Add(new PerfColumn {Caption = "#", Column = -1, Width = 53, Alignment = HorizontalAlignment.Right});
-    }
-
     private void InitGridColumns() {
-      InitColumns();
+      _columns = GridColumns.Build(_traceSettings.EventsColumns);
       lvEvents.BeginUpdate();
       lvEvents.SizeChanged -= LvEvents_SizeChanged;
       lvEvents.ColumnWidthChanged -= LvEvents_ColumnWidthChanged;
       try {
         lvEvents.Columns.Clear();
-        foreach (var pc in m_columns) {
+        foreach (var pc in _columns) {
           var l = lvEvents.Columns.Add(pc.Caption, pc.Width);
           l.TextAlign = pc.Alignment;
         }
@@ -317,16 +284,16 @@ namespace SqlProfiler {
     private void LvEvents_SizeChanged(object sender, EventArgs e) {
       var otherColumnsWidth = 0;
       for (var i = 0; i < lvEvents.Columns.Count; i++) {
-        if (i == fixedColumnIndex) continue;
+        if (i == GridColumns.TextDataIndex) continue;
         otherColumnsWidth += lvEvents.Columns[i].Width;
       }
-      
+
       var width = lvEvents.Width - otherColumnsWidth - SystemInformation.VerticalScrollBarWidth;
-      lvEvents.Columns[fixedColumnIndex].Width = Math.Max(width, MinFixedColumnWidth);
+      lvEvents.Columns[GridColumns.TextDataIndex].Width = Math.Max(width, MinFixedColumnWidth);
     }
 
     private void LvEvents_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e) {
-      if (e.ColumnIndex == fixedColumnIndex)
+      if (e.ColumnIndex == GridColumns.TextDataIndex)
         return;
       LvEvents_SizeChanged(sender, EventArgs.Empty);
     }
@@ -336,31 +303,47 @@ namespace SqlProfiler {
       UpdateSourceBox();
     }
 
-    void LvEvents_SelectedIndexChanged(object sender, EventArgs e) {
+    private void LvEvents_SelectedIndexChanged(object sender, EventArgs e) {
       UpdateSourceBox();
     }
 
-    void LvEvents_ColumnClick(object sender, ColumnClickEventArgs e) {
+    private void LvEvents_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e) {
+      UpdateSourceBox();
+    }
+
+    private void LvEvents_ColumnClick(object sender, ColumnClickEventArgs e) {
       lvEvents.ToggleSortOrder();
       lvEvents.SetSortIcon(e.Column, lvEvents.SortOrder);
-      var comparer = new TextDataComparer(e.Column, lvEvents.SortOrder);
-      m_Cached.Sort(comparer);
+      RowSorter.Sort(_rows, e.Column, lvEvents.SortOrder, GetCellText);
+      _prevSelectedIndices = null;
+      lvEvents.Invalidate();
       UpdateSourceBox();
       ShowSelectedEvent();
     }
 
+    private void LvEvents_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e) {
+      e.Item = e.ItemIndex < _rows.Count ? CreateItem(_rows[e.ItemIndex]) : new ListViewItem();
+    }
+
+    private ListViewItem CreateItem(EventRow row) {
+      var item = new ListViewItem(row.Caption) {Tag = row};
+      var cells = new string[_columns.Count - 1];
+      for (var i = 1; i < _columns.Count; i++)
+        cells[i - 1] = GetCellText(row, i);
+      item.SubItems.AddRange(cells);
+      return item;
+    }
+
+    private string GetCellText(EventRow row, int columnIndex) {
+      if (columnIndex == 0) return row.Caption;
+      var pc = _columns[columnIndex];
+      return pc.Column == -1 ? row.Number.ToString("#,0") : GetFormattedValue(row.Event, pc.Column, pc.Format) ?? "";
+    }
+
     private string GetEventCaption(ProfilerEvent evt) {
-      if (evt == m_EventStarted) {
-        return "Trace started";
-      }
-
-      if (evt == m_EventPaused) {
-        return "Trace paused";
-      }
-
-      if (evt == m_EventStopped) {
-        return "Trace stopped";
-      }
+      if (evt == _startedEvent) return "Trace started";
+      if (evt == _pausedEvent) return "Trace paused";
+      if (evt == _stoppedEvent) return "Trace stopped";
 
       var eventClass = evt.EventClass;
       return eventClass >= 0 && eventClass < ProfilerEvents.Names.Length && ProfilerEvents.Names[eventClass] != ""
@@ -368,124 +351,134 @@ namespace SqlProfiler {
         : "Event " + eventClass;
     }
 
-    private string GetFormattedValue(ProfilerEvent evt, int column, string format) {
+    private static string GetFormattedValue(ProfilerEvent evt, int column, string format) {
       return ProfilerEventColumns.Duration == column
         ? (evt.Duration / 1000).ToString(format)
         : evt.GetFormattedData(column, format);
     }
 
-    private void NewEventArrived(ProfilerEvent evt, bool last) {
-      {
-        var current = (lvEvents.SelectedIndices.Count > 0) ? m_Cached[lvEvents.SelectedIndices[0]] : null;
-        m_EventCount++;
-        var caption = GetEventCaption(evt);
-        var lvi = new ListViewItem(caption);
-        var items = new string[m_columns.Count];
-        for (var i = 1; i < m_columns.Count; i++) {
-          var pc = m_columns[i];
-          items[i - 1] = pc.Column == -1
-            ? m_EventCount.ToString("#,0")
-            : GetFormattedValue(evt, pc.Column, pc.Format) ?? "";
-        }
+    private int FocusedIndex => lvEvents.FocusedItem?.Index ?? -1;
 
-        lvi.SubItems.AddRange(items);
-        lvi.Tag = evt;
-        m_Cached.Add(lvi);
-        if (last) {
-          lvEvents.VirtualListSize = m_Cached.Count;
-          if (autoScrollToolStripMenuItem.Checked) {
-            lvEvents.SelectedIndices.Clear();
-            FocusLVI(lvEvents.Items[m_Cached.Count - 1], autoScrollToolStripMenuItem.Checked);
-          }
-          //FocusLVI(tbScroll.Checked ? lvEvents.Items[m_Cached.Count - 1] : current, tbScroll.Checked);
-          lvEvents.Invalidate(lvi.Bounds);
-        }
-      }
+    private void FocusRow(int index, bool ensureVisible) {
+      var item = lvEvents.Items[index];
+      item.Focused = true;
+      item.Selected = true;
+      UpdateSourceBox();
+      if (ensureVisible)
+        lvEvents.EnsureVisible(index);
     }
 
-    internal void FocusLVI(ListViewItem lvi, bool ensure) {
-      if (lvi is null) return;
-      lvi.Focused = true;
-      lvi.Selected = true;
-      LvEvents_ItemSelectionChanged(lvEvents, null);
-      if (ensure) {
-        lvEvents.EnsureVisible(lvEvents.Items.IndexOf(lvi));
-      }
-    }
-
-    private void ReadEvents(CancellationToken token) {
+    private void SelectAllEvents(bool select) {
+      lvEvents.BeginUpdate();
+      _dontUpdateSource = true;
       try {
-        while (!token.IsCancellationRequested && m_Rdr.TraceIsActive) {
-          var evt = m_Rdr.Next();
-          if (evt is not null) {
-            lock (m_eventsLock) {
-              m_events.Enqueue(evt);
-            }
-          }
+        if (select) {
+          for (var i = 0; i < _rows.Count; i++)
+            lvEvents.SelectedIndices.Add(i);
+        }
+        else {
+          lvEvents.SelectedIndices.Clear();
         }
       }
-      catch (Exception e) {
-        lock (m_eventsLock) {
-          if (!token.IsCancellationRequested && m_Rdr.TraceIsActive) {
-            m_profilerexception = e;
-          }
-        }
+      finally {
+        _dontUpdateSource = false;
+        UpdateSourceBox();
+        lvEvents.EndUpdate();
       }
     }
 
-    private SqlConnection GetConnection() {
-      var builder = new SqlConnectionStringBuilder {
-        DataSource = edServer.Text,
-        InitialCatalog = "master",
-        ApplicationName = "SqlProfiler",
-        ConnectTimeout = 15,
-        Encrypt = m_encrypt.Value,
-        TrustServerCertificate = m_trustCertificate.Value
-      };
-      if (tbAuth.SelectedIndex == 0) {
-        builder.IntegratedSecurity = true;
+    private void ShowSelectedEvent() {
+      var focusedIndex = FocusedIndex;
+      if (focusedIndex > -1 && focusedIndex < _rows.Count) {
+        SelectAllEvents(false);
+        FocusRow(focusedIndex, true);
       }
-      else {
-        builder.UserID = edUser.Text;
-        builder.Password = edPassword.Text;
+    }
+
+    private void UpdateSourceBox() {
+      if (_dontUpdateSource) return;
+
+      var selectedIndices = lvEvents.SelectedIndices.Cast<int>().ToArray();
+      if (_prevSelectedIndices is not null && selectedIndices.SequenceEqual(_prevSelectedIndices))
+        return;
+      _prevSelectedIndices = selectedIndices;
+
+      var sb = new StringBuilder();
+      foreach (var i in selectedIndices) {
+        if (i >= _rows.Count) continue;
+        var text = _rows[i].Event.TextData;
+        if (text != "")
+          sb.AppendFormat("{0}\r\ngo\r\n", text);
       }
 
-      return new SqlConnection(builder.ConnectionString);
+      _lexer.FillRichEdit(reTextData, sb.ToString());
     }
+
+    /// <summary>Replaces the rows and resets everything that depends on their positions.</summary>
+    private void ReplaceRows(IEnumerable<EventRow> rows) {
+      var list = rows.ToList();
+      _rows.Clear();
+      _rows.AddRange(list);
+      lvEvents.VirtualListSize = _rows.Count;
+      lvEvents.SelectedIndices.Clear();
+      _prevSelectedIndices = null;
+      lvEvents.Invalidate();
+      UpdateSourceBox();
+    }
+
+    private void AppendEvents(IEnumerable<ProfilerEvent> events) {
+      foreach (var evt in events) {
+        _eventCount++;
+        var isMarker = evt == _startedEvent || evt == _pausedEvent || evt == _stoppedEvent;
+        _rows.Add(new EventRow(evt, _eventCount, GetEventCaption(evt), isMarker));
+      }
+
+      TrimRows();
+      lvEvents.VirtualListSize = _rows.Count;
+      if (autoScrollToolStripMenuItem.Checked && _rows.Count > 0) {
+        lvEvents.SelectedIndices.Clear();
+        FocusRow(_rows.Count - 1, true);
+      }
+
+      lvEvents.Invalidate();
+    }
+
+    private bool TrimRows() {
+      var max = Math.Max(_traceSettings.Filters.MaximumEventCount, 0);
+      if (_rows.Count <= max) return false;
+      _rows.RemoveRange(0, _rows.Count - max);
+      _prevSelectedIndices = null;
+      return true;
+    }
+
+    #endregion
+
+    #region trace
 
     private void StartProfiling() {
       try {
         Cursor = Cursors.WaitCursor;
-        m_perf.Clear();
-        m_first = null;
-        m_prev = null;
-        if (m_ProfilingState == ProfilingStateEnum.psPaused) {
-          ResumeProfiling();
-          return;
+        _rateMeter.Reset();
+        if (_session.State == ProfilingStateEnum.psPaused) {
+          _session.Resume();
+        }
+        else {
+          _session.Start(_traceSettings);
+          InitGridColumns();
+          _eventCount = 0;
+          _unfilteredRows.Clear();
+          tbFilterEvents.Checked = false;
+          ReplaceRows(Enumerable.Empty<EventRow>());
         }
 
-        if (m_Conn is not null && m_Conn.State == ConnectionState.Open) {
-          m_Conn.Close();
-        }
-
-        InitGridColumns();
-        m_EventCount = 0;
-        m_Conn = GetConnection();
-        m_Conn.Open();
-        m_Rdr = new RawTraceReader(m_Conn);
-
-        m_Rdr.CreateTrace();
-        TraceConfigurator.Apply(m_Rdr, m_currentsettings);
-        m_Cached.Clear();
-        m_events.Clear();
-        lvEvents.VirtualListSize = 0;
-        StartProfilerThread();
+        AppendEvents(new[] {_startedEvent});
       }
       catch (SqlException e) when (IsPermissionError(e)) {
         MessageBox.Show(e.Message + "\r\n\r\nThe login needs the ALTER TRACE permission on the server (or the sysadmin role).",
           "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
       catch (Exception e) {
+        AppLogger.Error("Failed to start the profiling", e);
         MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
       finally {
@@ -503,90 +496,22 @@ namespace SqlProfiler {
       return false;
     }
 
-    private void StopReaderTask() {
-      m_readerCts?.Cancel();
-      m_Rdr.Close();
-      // the task ends when the closed reader stops its blocking read; a stuck read must not freeze the window
-      m_readerTask?.Wait(3000);
-      m_readerTask = null;
-      m_readerCts?.Dispose();
-      m_readerCts = null;
-    }
-
-    private void StartProfilerThread() {
-      StopReaderTask();
-      m_Rdr.StartTrace();
-      m_readerCts = new CancellationTokenSource();
-      var token = m_readerCts.Token;
-      m_ProfilingState = ProfilingStateEnum.psProfiling;
-      NewEventArrived(m_EventStarted, true);
-      m_readerTask = Task.Factory.StartNew(() => ReadEvents(token), token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-    }
-
-    private void ResumeProfiling() {
-      StartProfilerThread();
-      UpdateButtons();
-    }
-
     private void TbStop_Click(object sender, EventArgs e) {
       StopProfiling();
     }
 
     private void StopProfiling() {
       tbStop.Enabled = false;
-      using (var cn = GetConnection()) {
-        cn.Open();
-        m_Rdr.StopTrace(cn);
-        m_Rdr.CloseTrace(cn);
+      try {
+        _session.Stop();
+      }
+      catch (Exception e) {
+        MessageBox.Show("The trace is stopped, but it could not be removed on the server:\r\n" + e.Message,
+          "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
       }
 
-      StopReaderTask();
-      m_ProfilingState = ProfilingStateEnum.psStopped;
-      NewEventArrived(m_EventStopped, true);
+      AppendEvents(new[] {_stoppedEvent});
       UpdateButtons();
-    }
-
-    private void LvEvents_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e) {
-      UpdateSourceBox();
-    }
-
-    private int[] prevSelectedIndices = null;
-
-    private void UpdateSourceBox() {
-      if (dontUpdateSource) return;
-      var sb = new StringBuilder();
-
-      int[] selectedIndices = new int[lvEvents.SelectedIndices.Count];
-      lvEvents.SelectedIndices.CopyTo(selectedIndices, 0);
-      if (prevSelectedIndices is not null && Enumerable.SequenceEqual(selectedIndices, prevSelectedIndices))
-        return;
-      prevSelectedIndices = selectedIndices;
-
-      foreach (int i in selectedIndices) {
-        var lv = m_Cached[i];
-        if (lv.SubItems[1].Text != "") {
-          sb.AppendFormat("{0}\r\ngo\r\n", lv.SubItems[1].Text);
-        }
-      }
-
-      m_Lex.FillRichEdit(reTextData, sb.ToString());
-    }
-
-    private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
-      if (m_ProfilingState == ProfilingStateEnum.psPaused || m_ProfilingState == ProfilingStateEnum.psProfiling) {
-        if (MessageBox.Show("There are traces still running. Are you sure you want to close the application?",
-              "SqlProfiler", MessageBoxButtons.YesNo, MessageBoxIcon.Question
-              , MessageBoxDefaultButton.Button1) == DialogResult.Yes) {
-          StopProfiling();
-        }
-        else {
-          e.Cancel = true;
-        }
-      }
-    }
-
-    private void LvEvents_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e) {
-      e.Item = m_Cached[e.ItemIndex];
     }
 
     private void TbPause_Click(object sender, EventArgs e) {
@@ -594,254 +519,60 @@ namespace SqlProfiler {
     }
 
     private void PauseProfiling() {
-      using (var cn = GetConnection()) {
-        cn.Open();
-        m_Rdr.StopTrace(cn);
+      try {
+        _session.Pause();
+      }
+      catch (Exception e) {
+        AppLogger.Error("Failed to pause the trace", e);
+        MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return;
       }
 
-      m_ProfilingState = ProfilingStateEnum.psPaused;
-      NewEventArrived(m_EventPaused, true);
+      AppendEvents(new[] {_pausedEvent});
       UpdateButtons();
     }
 
-    internal void SelectAllEvents(bool select) {
-      lock (m_Cached) {
-        lvEvents.BeginUpdate();
-        dontUpdateSource = true;
-        try {
-          foreach (var lv in m_Cached) {
-            lv.Selected = select;
-          }
-        }
-        finally {
-          dontUpdateSource = false;
-          UpdateSourceBox();
-          lvEvents.EndUpdate();
-        }
+    private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
+      if (_session.State == ProfilingStateEnum.psStopped) return;
+      if (MessageBox.Show("There are traces still running. Are you sure you want to close the application?",
+            "SqlProfiler", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1) == DialogResult.Yes) {
+        StopProfiling();
+      }
+      else {
+        e.Cancel = true;
       }
     }
 
     private void Timer1_Tick(object sender, EventArgs e) {
-      Queue<ProfilerEvent> saved;
-      Exception exc;
-      lock (m_eventsLock) {
-        saved = m_events;
-        m_events = new Queue<ProfilerEvent>(10);
-        exc = m_profilerexception;
-        m_profilerexception = null;
+      var events = _session.TakeEvents();
+      var error = _session.TakeError();
+
+      if (events.Count > 0) {
+        AppendEvents(events);
       }
-
-      if (exc is not null) {
-        using var dlg = new ThreadExceptionDialog(exc);
-        dlg.ShowDialog();
-      }
-
-      lock (m_Cached) {
-        while (0 != saved.Count) {
-          NewEventArrived(saved.Dequeue(), 0 == saved.Count);
-        }
-
-        if (m_Cached.Count > m_currentsettings.Filters.MaximumEventCount) {
-          m_Cached.RemoveRange(0, m_Cached.Count - Math.Max(m_currentsettings.Filters.MaximumEventCount, 0));
-          lvEvents.VirtualListSize = m_Cached.Count;
-          lvEvents.Invalidate();
-        }
-
-        if (m_prev is null || (DateTime.Now.Subtract(m_prev.m_date).TotalSeconds >= 1)) {
-          var curr = new PerfInfo {m_count = m_EventCount};
-          if (m_perf.Count >= 60) {
-            m_first = m_perf.Dequeue();
-          }
-
-          m_first ??= curr;
-          m_prev ??= curr;
-
-          var now = DateTime.Now;
-          var d1 = now.Subtract(m_prev.m_date).TotalSeconds;
-          var d2 = now.Subtract(m_first.m_date).TotalSeconds;
-          slEPS.Text = string.Format("{0} / {1} EPS(last/avg for {2} second(s))",
-            (Math.Abs(d1 - 0) > 0.001 ? ((curr.m_count - m_prev.m_count) / d1).ToString("#,0.00") : ""),
-            (Math.Abs(d2 - 0) > 0.001 ? ((curr.m_count - m_first.m_count) / d2).ToString("#,0.00") : ""),
-            d2.ToString("0"));
-
-          m_perf.Enqueue(curr);
-          m_prev = curr;
-        }
-      }
-    }
-
-    private void TbAuth_SelectedIndexChanged(object sender, EventArgs e) {
-      UpdateButtons();
-    }
-
-    private void ClearTrace() {
-      lock (m_Cached) {
-        m_Cached.Clear();
-        lvEvents.VirtualListSize = 0;
-        LvEvents_ItemSelectionChanged(lvEvents, null);
+      else if (TrimRows()) {
+        lvEvents.VirtualListSize = _rows.Count;
         lvEvents.Invalidate();
       }
-    }
 
-    private void TbClear_Click(object sender, EventArgs e) {
-      ClearTrace();
-    }
+      var rate = _rateMeter.Update(_eventCount);
+      if (rate is not null)
+        slEPS.Text = rate;
 
-    private void CopyAllToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
-      CopyEventsToClipboard(false);
-    }
-
-    private void CopyEventsToClipboard(bool copySelected) {
-      string xml;
-      lock (m_Cached) {
-        var items = copySelected
-          ? lvEvents.SelectedIndices.Cast<int>().Select(i => m_Cached[i])
-          : m_Cached;
-        xml = EventExporter.BuildEventsXml(items.Select(i => (ProfilerEvent) i.Tag).ToList());
-      }
-
-      Clipboard.SetText(xml);
-      MessageBox.Show("Event(s) data copied to clipboard", "Information", MessageBoxButtons.OK,
-        MessageBoxIcon.Information);
-    }
-
-    private void CopySelectedToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
-      CopyEventsToClipboard(true);
-    }
-
-    private void ClearTraceWindowToolStripMenuItem_Click(object sender, EventArgs e) {
-      ClearTrace();
-    }
-
-    private void ExtractAllEventsToolStripMenuItem_Click(object sender, EventArgs e) {
-      CopyEventsToClipboard(false);
-    }
-
-    private void ExtractSelectedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
-      CopyEventsToClipboard(true);
-    }
-
-    private void PauseTraceToolStripMenuItem_Click(object sender, EventArgs e) {
-      PauseProfiling();
-    }
-
-    private void StopTraceToolStripMenuItem_Click(object sender, EventArgs e) {
-      StopProfiling();
-    }
-
-    private void FindToolStripMenuItem_Click(object sender, EventArgs e) {
-      DoFind();
-    }
-
-    private void DoFind() {
-      if (m_ProfilingState == ProfilingStateEnum.psProfiling) {
-        MessageBox.Show("You cannot find when trace is running", "SqlProfiler", MessageBoxButtons.OK,
-          MessageBoxIcon.Information);
-        return;
-      }
-
-      using (var f = new FindForm(this)) {
-        f.TopMost = this.TopMost;
-        f.ShowDialog();
+      if (error is not null) {
+        StopProfiling();
+        MessageBox.Show("Reading of the trace events failed, the trace is stopped:\r\n" + error.Message +
+                        "\r\n\r\nDetails are written to " + AppLogger.FilePath,
+          "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
     }
 
-    private void SelectAllToolStripMenuItem_Click(object sender, EventArgs e) {
-      if (lvEvents.Focused && (m_ProfilingState != ProfilingStateEnum.psProfiling)) {
-        SelectAllEvents(true);
-      }
-      else if (reTextData.Focused) {
-        reTextData.SelectAll();
-      }
-    }
-
-    internal void PerformFind(bool forwards, bool wrapAround) {
-      if (string.IsNullOrEmpty(lastpattern)) return;
-      var lastpos = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
-      if (forwards) {
-        for (var i = lastpos + 1; i < m_Cached.Count; i++) {
-          if (FindText(i)) {
-            return;
-          }
-        }
-
-        if (wrapAround) {
-          for (var i = 0; i < lastpos; i++) {
-            if (FindText(i)) {
-              return;
-            }
-          }
-        }
-      }
-      else {
-        for (var i = lastpos - 1; i >= 0; i--) {
-          if (FindText(i)) {
-            return;
-          }
-        }
-
-        if (wrapAround) {
-          for (var i = m_Cached.Count - 1; i > lastpos; i--) {
-            if (FindText(i)) {
-              return;
-            }
-          }
-        }
-      }
-
-      MessageBox.Show(string.Format("Failed to find \"{0}\". Searched to the end of data. ", lastpattern),
-        "SqlProfiler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
-
-    private void ShowSelectedEvent() {
-      var focusedIndex = lvEvents.Items.IndexOf(lvEvents.FocusedItem);
-      if ((focusedIndex > -1) && (focusedIndex < m_Cached.Count)) {
-        var lvi = m_Cached[focusedIndex];
-        var evt = (ProfilerEvent) lvi.Tag;
-
-        lvi.Focused = true;
-        SelectAllEvents(false);
-        FocusLVI(lvi, true);
-      }
-    }
-
-    private bool FindText(int i) {
-      var lvi = m_Cached[i];
-      var evt = (ProfilerEvent) lvi.Tag;
-      var escaped = Regex.Escape(lastpattern);
-      var pattern = wholeWord ? "\\b" + escaped + "\\b" : escaped;
-      if (Regex.IsMatch(evt.TextData, pattern, (matchCase ? RegexOptions.None : RegexOptions.IgnoreCase))) {
-        lvi.Focused = true;
-        SelectAllEvents(false);
-        FocusLVI(lvi, true);
-        return true;
-      }
-
-      return false;
-    }
-
-    private void FindNextToolStripMenuItem_Click(object sender, EventArgs e) {
-      if (m_ProfilingState == ProfilingStateEnum.psProfiling) {
-        MessageBox.Show("You cannot find when trace is running", "SqlProfiler", MessageBoxButtons.OK,
-          MessageBoxIcon.Information);
-        return;
-      }
-
-      PerformFind(true, wrapAround);
-    }
-
-    private void ExitToolStripMenuItem_Click(object sender, EventArgs e) {
-      Close();
-    }
-
-    internal void RunProfiling(bool showfilters) {
-      if (showfilters) {
-        var ts = m_currentsettings.GetCopy();
-        using (var frm = new TraceProperties()) {
-          frm.SetSettings(ts);
-          if (DialogResult.OK != frm.ShowDialog()) return;
-          m_currentsettings = frm.m_currentsettings.GetCopy();
-        }
+    internal void RunProfiling(bool showFilters) {
+      if (showFilters) {
+        using var frm = new TraceProperties();
+        frm.SetSettings(_traceSettings.GetCopy());
+        if (DialogResult.OK != frm.ShowDialog()) return;
+        _traceSettings = frm.Settings.GetCopy();
       }
 
       StartProfiling();
@@ -851,130 +582,70 @@ namespace SqlProfiler {
       RunProfiling(true);
     }
 
-    private void CopyToXlsToolStripMenuItem_Click(object sender, EventArgs e) {
-      CopyForExcel();
+    private void TbAuth_SelectedIndexChanged(object sender, EventArgs e) {
+      UpdateButtons();
     }
 
-    private XmlDocument BuildExcelDocument() {
-      lock (m_Cached) {
-        return EventExporter.BuildExcelDocument(lvEvents, m_columns, m_Cached.ToList(), GetEventCaption, GetFormattedValue);
-      }
+    #endregion
+
+    #region captured events
+
+    private void ClearTrace() {
+      _unfilteredRows.Clear();
+      tbFilterEvents.Checked = false;
+      ReplaceRows(Enumerable.Empty<EventRow>());
     }
 
-    private void CopyForExcel() {
-      var doc = BuildExcelDocument();
-      using (var xmlStream = new MemoryStream(EventExporter.GetXmlBytes(doc))) {
-        Clipboard.SetData("XML Spreadsheet", xmlStream);
-      }
-
-      MessageBox.Show("Event(s) data copied to clipboard", "Information", MessageBoxButtons.OK,
-        MessageBoxIcon.Information);
+    private void TbClear_Click(object sender, EventArgs e) {
+      ClearTrace();
     }
 
-    private void MnAbout_Click(object sender, EventArgs e) {
-      Updater.ShowAbout();
-    }
-
-    private void StayOnTop_Click(object sender, EventArgs e) {
-      stayOnTopToolStripMenuItem.Checked = !stayOnTopToolStripMenuItem.Checked;
-      this.TopMost = stayOnTopToolStripMenuItem.Checked;
-    }
-
-    protected override void OnMouseWheel(MouseEventArgs e) {
-      if (e.Button != MouseButtons.None) return;
-      var delta = e.Delta > 0 ? 0.05 : -0.05;
-      var nextOpacity = Opacity + delta;
-      if (nextOpacity < 0.1) nextOpacity = 0.1;
-      if (nextOpacity > 1) nextOpacity = 1;
-      Opacity = nextOpacity;
+    private void ClearTraceWindowToolStripMenuItem_Click(object sender, EventArgs e) {
+      ClearTrace();
     }
 
     private void DeleteSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
-      lock (m_Cached) {
-        for (var i = lvEvents.SelectedIndices.Count - 1; i >= 0; i--) {
-          m_Cached.RemoveAt(lvEvents.SelectedIndices[i]);
-        }
-      }
-
-      lvEvents.VirtualListSize = m_Cached.Count;
-      lvEvents.SelectedIndices.Clear();
+      var selected = new HashSet<int>(lvEvents.SelectedIndices.Cast<int>());
+      ReplaceRows(_rows.Where((_, i) => !selected.Contains(i)));
     }
 
     private void KeepSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
-      lock (m_Cached) {
-        var selected = new HashSet<int>(lvEvents.SelectedIndices.Cast<int>());
-        for (var i = m_Cached.Count - 1; i >= 0; i--) {
-          if (!selected.Contains(i)) {
-            m_Cached.RemoveAt(i);
-          }
-        }
-      }
-
-      lvEvents.VirtualListSize = m_Cached.Count;
-      lvEvents.SelectedIndices.Clear();
+      var selected = new HashSet<int>(lvEvents.SelectedIndices.Cast<int>());
+      ReplaceRows(_rows.Where((_, i) => selected.Contains(i)));
     }
 
-    private void SaveToExcelXmlFile() {
-      var doc = BuildExcelDocument();
-
-      using (var sfd = new SaveFileDialog {Filter = "Excel XML|*.xml", Title = "Save the Excel XML file"}) {
-        if (sfd.ShowDialog(this) != DialogResult.OK || string.IsNullOrEmpty(sfd.FileName)) return;
-        File.WriteAllBytes(sfd.FileName, EventExporter.GetXmlBytes(doc));
-
-        MessageBox.Show(string.Format("File saved to: {0}", sfd.FileName), "Information", MessageBoxButtons.OK,
-          MessageBoxIcon.Information);
+    private void SelectAllToolStripMenuItem_Click(object sender, EventArgs e) {
+      if (lvEvents.Focused && _session.State != ProfilingStateEnum.psProfiling) {
+        SelectAllEvents(true);
+      }
+      else if (reTextData.Focused) {
+        reTextData.SelectAll();
       }
     }
 
     private void SetFilterEvents() {
-      if (m_CachedUnFiltered.Count == 0) {
-        lvEvents.SelectedIndices.Clear();
-        using (var frm = new TraceProperties()) {
-          frm.SetSettings(m_currentsettings.GetCopy());
-          if (DialogResult.OK != frm.ShowDialog()) return;
-          m_currentsettings = frm.m_currentsettings.GetCopy();
+      if (_unfilteredRows.Count != 0) return;
 
-          m_CachedUnFiltered.AddRange(m_Cached);
-          m_Cached.Clear();
-          foreach (var lvi in m_CachedUnFiltered) {
-            if (frm.IsIncluded(lvi) && m_Cached.Count < m_currentsettings.Filters.MaximumEventCount) {
-              m_Cached.Add(lvi);
-            }
-          }
-        }
-
-        lvEvents.VirtualListSize = m_Cached.Count;
-        UpdateSourceBox();
-        ShowSelectedEvent();
+      lvEvents.SelectedIndices.Clear();
+      using var frm = new TraceProperties();
+      frm.SetSettings(_traceSettings.GetCopy());
+      if (DialogResult.OK != frm.ShowDialog()) {
+        tbFilterEvents.Checked = false;
+        return;
       }
+
+      _traceSettings = frm.Settings.GetCopy();
+      _unfilteredRows.AddRange(_rows);
+      var filters = _traceSettings.Filters;
+      ReplaceRows(_unfilteredRows.Where(r => EventFilter.IsIncluded(filters, r)).Take(Math.Max(filters.MaximumEventCount, 0)));
+      ShowSelectedEvent();
     }
 
     private void ClearFilterEvents() {
-      if (m_CachedUnFiltered.Count > 0) {
-        m_Cached.Clear();
-        m_Cached.AddRange(m_CachedUnFiltered);
-        m_CachedUnFiltered.Clear();
-        lvEvents.VirtualListSize = m_Cached.Count;
-        lvEvents.SelectedIndices.Clear();
-        UpdateSourceBox();
-        ShowSelectedEvent();
-      }
-    }
-
-    private void SaveAllEventsToExcelXmlFileToolStripMenuItem_Click(object sender, EventArgs e) {
-      SaveToExcelXmlFile();
-    }
-
-    private void EdServer_TextChanged(object sender, EventArgs e) {
-      settings.SetValue("Server", edServer.Text);
-    }
-
-    private void EdUser_TextChanged(object sender, EventArgs e) {
-      settings.SetValue("User", edUser.Text);
-    }
-
-    private void EdPassword_TextChanged(object sender, EventArgs e) {
-      settings.SetValue("Password", edPassword.Text);
+      if (_unfilteredRows.Count == 0) return;
+      ReplaceRows(_unfilteredRows);
+      _unfilteredRows.Clear();
+      ShowSelectedEvent();
     }
 
     private void FilterCapturedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -983,14 +654,6 @@ namespace SqlProfiler {
 
     private void ClearCapturedFiltersToolStripMenuItem_Click(object sender, EventArgs e) {
       ClearFilterEvents();
-    }
-
-    private void SiteToolStripMenuItem_Click(object sender, EventArgs e) {
-      Updater.VisitAppSite();
-    }
-
-    private void CheckForUpdatesToolStripMenuItem_Click(object sender, EventArgs e) {
-      Updater.CheckForUpdates(Updater.CheckUpdatesMode.AllMessages);
     }
 
     private void TbFilterEvents_Click(object sender, EventArgs e) {
@@ -1002,5 +665,143 @@ namespace SqlProfiler {
         ClearFilterEvents();
       }
     }
+
+    #endregion
+
+    #region find
+
+    private void FindToolStripMenuItem_Click(object sender, EventArgs e) {
+      if (!CanFind()) return;
+      using var f = new FindForm(this);
+      f.TopMost = TopMost;
+      f.ShowDialog();
+    }
+
+    private void FindNextToolStripMenuItem_Click(object sender, EventArgs e) {
+      if (!CanFind()) return;
+      PerformFind(true, WrapAround);
+    }
+
+    private bool CanFind() {
+      if (_session.State != ProfilingStateEnum.psProfiling) return true;
+      MessageBox.Show("You cannot find when trace is running", "SqlProfiler", MessageBoxButtons.OK, MessageBoxIcon.Information);
+      return false;
+    }
+
+    internal void PerformFind(bool forwards, bool wrapAround) {
+      if (string.IsNullOrEmpty(LastPattern)) return;
+      var index = EventSearch.Find(_rows, LastPattern, MatchCase, WholeWord, forwards, wrapAround, FocusedIndex);
+      if (index < 0) {
+        MessageBox.Show($"Failed to find \"{LastPattern}\". Searched to the end of data. ", "SqlProfiler",
+          MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+      }
+
+      SelectAllEvents(false);
+      FocusRow(index, true);
+    }
+
+    #endregion
+
+    #region export
+
+    private void CopyAllToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
+      CopyEventsToClipboard(false);
+    }
+
+    private void CopySelectedToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
+      CopyEventsToClipboard(true);
+    }
+
+    private void ExtractAllEventsToolStripMenuItem_Click(object sender, EventArgs e) {
+      CopyEventsToClipboard(false);
+    }
+
+    private void ExtractSelectedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
+      CopyEventsToClipboard(true);
+    }
+
+    private void CopyEventsToClipboard(bool copySelected) {
+      var rows = copySelected
+        ? lvEvents.SelectedIndices.Cast<int>().Select(i => _rows[i])
+        : _rows;
+      Clipboard.SetText(EventExporter.BuildEventsXml(rows.Select(r => r.Event).ToList()));
+      MessageBox.Show("Event(s) data copied to clipboard", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void CopyToXlsToolStripMenuItem_Click(object sender, EventArgs e) {
+      var doc = BuildExcelDocument();
+      using var xmlStream = new MemoryStream(EventExporter.GetXmlBytes(doc));
+      Clipboard.SetData("XML Spreadsheet", xmlStream);
+      MessageBox.Show("Event(s) data copied to clipboard", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void SaveAllEventsToExcelXmlFileToolStripMenuItem_Click(object sender, EventArgs e) {
+      var doc = BuildExcelDocument();
+      using var sfd = new SaveFileDialog {Filter = "Excel XML|*.xml", Title = "Save the Excel XML file"};
+      if (sfd.ShowDialog(this) != DialogResult.OK || string.IsNullOrEmpty(sfd.FileName)) return;
+      File.WriteAllBytes(sfd.FileName, EventExporter.GetXmlBytes(doc));
+      MessageBox.Show($"File saved to: {sfd.FileName}", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private XmlDocument BuildExcelDocument() {
+      return EventExporter.BuildExcelDocument(lvEvents, _columns, _rows.Select(r => r.Event).ToList(), GetEventCaption, GetFormattedValue);
+    }
+
+    #endregion
+
+    #region menu and connection fields
+
+    private void PauseTraceToolStripMenuItem_Click(object sender, EventArgs e) {
+      PauseProfiling();
+    }
+
+    private void StopTraceToolStripMenuItem_Click(object sender, EventArgs e) {
+      StopProfiling();
+    }
+
+    private void ExitToolStripMenuItem_Click(object sender, EventArgs e) {
+      Close();
+    }
+
+    private void MnAbout_Click(object sender, EventArgs e) {
+      Updater.ShowAbout();
+    }
+
+    private void StayOnTop_Click(object sender, EventArgs e) {
+      stayOnTopToolStripMenuItem.Checked = !stayOnTopToolStripMenuItem.Checked;
+      TopMost = stayOnTopToolStripMenuItem.Checked;
+    }
+
+    protected override void OnMouseWheel(MouseEventArgs e) {
+      if (e.Button != MouseButtons.None) return;
+      var delta = e.Delta > 0 ? 0.05 : -0.05;
+      var nextOpacity = Opacity + delta;
+      if (nextOpacity < 0.1) nextOpacity = 0.1;
+      if (nextOpacity > 1) nextOpacity = 1;
+      Opacity = nextOpacity;
+    }
+
+    private void EdServer_TextChanged(object sender, EventArgs e) {
+      _settings.SetValue("Server", edServer.Text);
+    }
+
+    private void EdUser_TextChanged(object sender, EventArgs e) {
+      _settings.SetValue("User", edUser.Text);
+    }
+
+    private void EdPassword_TextChanged(object sender, EventArgs e) {
+      _settings.SetValue("Password", edPassword.Text);
+    }
+
+    private void SiteToolStripMenuItem_Click(object sender, EventArgs e) {
+      Updater.VisitAppSite();
+    }
+
+    private void CheckForUpdatesToolStripMenuItem_Click(object sender, EventArgs e) {
+      Updater.CheckForUpdates(Updater.CheckUpdatesMode.AllMessages);
+    }
+
+    #endregion
   }
 }

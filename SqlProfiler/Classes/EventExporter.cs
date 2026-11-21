@@ -45,7 +45,7 @@ namespace SqlProfiler {
 
     /// <summary>Builds an "XML Spreadsheet 2003" document (opens in Excel) from the list items.</summary>
     public static XmlDocument BuildExcelDocument(ListView listView, IList<PerfColumn> columns,
-      IEnumerable<ListViewItem> items, Func<ProfilerEvent, string> getCaption,
+      IEnumerable<ProfilerEvent> events, Func<ProfilerEvent, string> getCaption,
       Func<ProfilerEvent, int, string, string> getFormattedValue) {
       var doc = new XmlDocument();
       doc.AppendChild(doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'"));
@@ -82,8 +82,7 @@ namespace SqlProfiler {
         AddCell(headerRow, "String", column.Text, HeaderStyleId);
 
       long rowNumber = 1;
-      foreach (var item in items) {
-        var evt = (ProfilerEvent) item.Tag;
+      foreach (var evt in events) {
         var row = CreateElement(doc, "Row");
         table.AppendChild(row);
         foreach (var pc in columns) {
