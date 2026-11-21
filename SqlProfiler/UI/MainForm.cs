@@ -446,6 +446,7 @@ namespace SqlProfiler {
       _prevSelectedIndices = null;
       lvEvents.Invalidate();
       UpdateSourceBox();
+      UpdateEventsStatus();
     }
 
     private void AppendEvents(IEnumerable<ProfilerEvent> events) {
@@ -463,11 +464,13 @@ namespace SqlProfiler {
       }
 
       lvEvents.Invalidate();
+      UpdateEventsStatus();
     }
 
     private bool TrimRows() {
       var max = Math.Max(_traceSettings.Filters.MaximumEventCount, 0);
       if (_rows.Count <= max) return false;
+      _trimmedCount += _rows.Count - max;
       _rows.RemoveRange(0, _rows.Count - max);
       _prevSelectedIndices = null;
       return true;
@@ -489,6 +492,7 @@ namespace SqlProfiler {
           _session.Start(_traceSettings);
           _activeServer = edServer.Text;
           _traceClock.Restart();
+          _trimmedCount = 0;
           InitGridColumns();
           _eventCount = 0;
           _unfilteredRows.Clear();
@@ -581,6 +585,7 @@ namespace SqlProfiler {
       else if (TrimRows()) {
         lvEvents.VirtualListSize = _rows.Count;
         lvEvents.Invalidate();
+        UpdateEventsStatus();
       }
 
       _slElapsed.Text = FormatElapsed(_traceClock.Elapsed);
@@ -620,6 +625,7 @@ namespace SqlProfiler {
     #region captured events
 
     private void ClearTrace() {
+      _trimmedCount = 0;
       _unfilteredRows.Clear();
       tbFilterEvents.Checked = false;
       ReplaceRows(Enumerable.Empty<EventRow>());
