@@ -56,6 +56,7 @@
     <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\ToolStripRadioButtonMenuItem.cs" Link="Common\ToolStripRadioButtonMenuItem.cs" />
     <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\RadioButtonMenuItem.cs" Link="Common\RadioButtonMenuItem.cs" />
     <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\PersistentSettings.cs" Link="Common\PersistentSettings.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\ListViewExtended.cs" Link="Common\ListViewExtended.cs" />
     <Compile Include="$(CommonSourcesDir)sergiye.Common\Tools\Crasher.cs" Link="Common\Crasher.cs" />
     <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\UserOption.cs" Link="Common\UserOption.cs" />
   </ItemGroup>

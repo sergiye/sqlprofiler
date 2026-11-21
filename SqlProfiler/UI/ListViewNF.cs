@@ -1,7 +1,8 @@
+using sergiye.Common;
 using System.Windows.Forms;
 
 namespace SqlProfiler {
-  class ListViewNF : ListView {
+  class ListViewNF : ListViewExtended {
     public SortOrder SortOrder { get; set; }
 
     public ListViewNF() {
