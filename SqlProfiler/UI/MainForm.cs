@@ -61,6 +61,7 @@ namespace SqlProfiler {
       InitCopyText();
       InitRowMenu();
       InitHighlight();
+      InitSourcePanel();
 
       _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
@@ -437,7 +438,7 @@ namespace SqlProfiler {
         if (i >= _rows.Count) continue;
         var text = _rows[i].Event.TextData;
         if (text != "")
-          sb.AppendFormat("{0}\r\ngo\r\n", text);
+          sb.AppendFormat("{0}\r\ngo\r\n", FormatForDisplay(text));
       }
 
       _lexer.FillRichEdit(reTextData, sb.ToString());

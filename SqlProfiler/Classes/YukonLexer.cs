@@ -72,6 +72,22 @@ namespace SqlProfiler {
 
     #endregion
 
+    /// <summary>Splits the text into tokens; the white space between them is returned as tokens too.</summary>
+    internal System.Collections.Generic.List<SqlToken> Tokenize(string sql) {
+      var result = new System.Collections.Generic.List<SqlToken>();
+      Range = SqlRange.rsUnknown;
+      _line = sql;
+      _run = 0;
+      while (true) {
+        var insideBlockComment = Range == SqlRange.rsComment;
+        Next();
+        if (_tokenId == TokenKind.tkNull) break;
+        result.Add(new SqlToken(_tokenId, _token, insideBlockComment));
+      }
+
+      return result;
+    }
+
     public void FillRichEdit(System.Windows.Forms.RichTextBox rich, string value) {
       rich.Text = "";
       Line = value;
