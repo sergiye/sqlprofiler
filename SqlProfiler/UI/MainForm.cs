@@ -67,6 +67,7 @@ namespace SqlProfiler {
       InitConnectionTools();
       InitPresets();
       InitTraceFile();
+      InitExportFiles();
       InitLiveSort();
 
       _traceSettings = LoadTraceSettings();
