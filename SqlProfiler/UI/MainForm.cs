@@ -662,65 +662,22 @@ namespace SqlProfiler {
       ClearTrace();
     }
 
-    private void NewAttribute(XmlNode node, string name, string value) {
-      var attr = node.OwnerDocument.CreateAttribute(name);
-      attr.Value = value;
-      node.Attributes.Append(attr);
-    }
-
-    private void NewAttribute(XmlNode node, string name, string value, string namespaceURI) {
-      var attr = node.OwnerDocument.CreateAttribute("ss", name, namespaceURI);
-      attr.Value = value;
-      node.Attributes.Append(attr);
-    }
-
     private void copyAllToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
       CopyEventsToClipboard(false);
     }
 
     private void CopyEventsToClipboard(bool copySelected) {
-      var doc = new XmlDocument();
-      XmlNode root = doc.CreateElement("events");
+      string xml;
       lock (m_Cached) {
-        if (copySelected) {
-          foreach (int i in lvEvents.SelectedIndices) {
-            CreateEventRow((ProfilerEvent) (m_Cached[i]).Tag, root);
-          }
-        }
-        else {
-          foreach (var i in m_Cached) {
-            CreateEventRow((ProfilerEvent) i.Tag, root);
-          }
-        }
+        var items = copySelected
+          ? lvEvents.SelectedIndices.Cast<int>().Select(i => m_Cached[i])
+          : m_Cached;
+        xml = EventExporter.BuildEventsXml(items.Select(i => (ProfilerEvent) i.Tag).ToList());
       }
 
-      doc.AppendChild(root);
-      doc.PreserveWhitespace = true;
-      using (var writer = new StringWriter()) {
-        var textWriter = new XmlTextWriter(writer) {Formatting = Formatting.Indented};
-        doc.Save(textWriter);
-        Clipboard.SetText(writer.ToString());
-      }
-
+      Clipboard.SetText(xml);
       MessageBox.Show("Event(s) data copied to clipboard", "Information", MessageBoxButtons.OK,
         MessageBoxIcon.Information);
-    }
-
-    private void CreateEventRow(ProfilerEvent evt, XmlNode root) {
-      XmlNode row = root.OwnerDocument.CreateElement("event");
-      NewAttribute(row, "EventClass", evt.EventClass.ToString(CultureInfo.InvariantCulture));
-      NewAttribute(row, "CPU", evt.CPU.ToString(CultureInfo.InvariantCulture));
-      NewAttribute(row, "Reads", evt.Reads.ToString(CultureInfo.InvariantCulture));
-      NewAttribute(row, "Writes", evt.Writes.ToString(CultureInfo.InvariantCulture));
-      NewAttribute(row, "Duration", evt.Duration.ToString(CultureInfo.InvariantCulture));
-      NewAttribute(row, "SPID", evt.SPID.ToString(CultureInfo.InvariantCulture));
-      NewAttribute(row, "LoginName", evt.LoginName);
-      NewAttribute(row, "DatabaseName", evt.DatabaseName);
-      NewAttribute(row, "ObjectName", evt.ObjectName);
-      NewAttribute(row, "ApplicationName", evt.ApplicationName);
-      NewAttribute(row, "HostName", evt.HostName);
-      row.InnerText = evt.TextData;
-      root.AppendChild(row);
     }
 
     private void copySelectedToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -874,123 +831,14 @@ namespace SqlProfiler {
     }
 
     private XmlDocument BuildExcelDocument() {
-      var doc = new XmlDocument();
-      var pi = doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'");
-      doc.AppendChild(pi);
-      const string urn = "urn:schemas-microsoft-com:office:spreadsheet";
-      XmlNode root = doc.CreateElement("ss", "Workbook", urn);
-      NewAttribute(root, "xmlns:ss", urn);
-      doc.AppendChild(root);
-
-      XmlNode styles = doc.CreateElement("ss", "Styles", urn);
-      root.AppendChild(styles);
-      XmlNode style = doc.CreateElement("ss", "Style", urn);
-      styles.AppendChild(style);
-      NewAttribute(style, "ID", "s62", urn);
-      XmlNode font = doc.CreateElement("ss", "Font", urn);
-      style.AppendChild(font);
-      NewAttribute(font, "Bold", "1", urn);
-
-
-      XmlNode worksheet = doc.CreateElement("ss", "Worksheet", urn);
-      root.AppendChild(worksheet);
-      NewAttribute(worksheet, "Name", "Sql Trace", urn);
-      XmlNode table = doc.CreateElement("ss", "Table", urn);
-      worksheet.AppendChild(table);
-      NewAttribute(table, "ExpandedColumnCount", m_columns.Count.ToString(CultureInfo.InvariantCulture), urn);
-
-      foreach (ColumnHeader lv in lvEvents.Columns) {
-        XmlNode r = doc.CreateElement("ss", "Column", urn);
-        NewAttribute(r, "AutoFitWidth", "0", urn);
-        NewAttribute(r, "Width", lv.Width.ToString(CultureInfo.InvariantCulture), urn);
-        table.AppendChild(r);
-      }
-
-      XmlNode row = doc.CreateElement("ss", "Row", urn);
-      table.AppendChild(row);
-      foreach (ColumnHeader lv in lvEvents.Columns) {
-        XmlNode cell = doc.CreateElement("ss", "Cell", urn);
-        row.AppendChild(cell);
-        NewAttribute(cell, "StyleID", "s62", urn);
-        XmlNode data = doc.CreateElement("ss", "Data", urn);
-        cell.AppendChild(data);
-        NewAttribute(data, "Type", "String", urn);
-        data.InnerText = lv.Text;
-      }
-
       lock (m_Cached) {
-        long rowNumber = 1;
-        foreach (var lvi in m_Cached) {
-          row = doc.CreateElement("ss", "Row", urn);
-          table.AppendChild(row);
-          for (var i = 0; i < m_columns.Count; i++) {
-            var pc = m_columns[i];
-            if (pc.Column != -1) {
-              XmlNode cell = doc.CreateElement("ss", "Cell", urn);
-              row.AppendChild(cell);
-              XmlNode data = doc.CreateElement("ss", "Data", urn);
-              cell.AppendChild(data);
-              string dataType;
-              switch (ProfilerEventColumns.ProfilerColumnDataTypes[pc.Column]) {
-                case ProfilerColumnDataType.Int:
-                case ProfilerColumnDataType.Long:
-                  dataType = "Number";
-                  break;
-                case ProfilerColumnDataType.DateTime:
-                  dataType = "String";
-                  break;
-                default:
-                  dataType = "String";
-                  break;
-              }
-
-              if (ProfilerEventColumns.EventClass == pc.Column) dataType = "String";
-              NewAttribute(data, "Type", dataType, urn);
-              if (ProfilerEventColumns.EventClass == pc.Column) {
-                data.InnerText = GetEventCaption(((ProfilerEvent) (lvi.Tag)));
-              }
-              else {
-                data.InnerText = pc.Column == -1
-                  ? ""
-                  : GetFormattedValue((ProfilerEvent) (lvi.Tag), pc.Column,
-                      ProfilerEventColumns.ProfilerColumnDataTypes[pc.Column] == ProfilerColumnDataType.DateTime
-                        ? pc.Format
-                        : "") ??
-                    "";
-              }
-            }
-            else {
-              //The export of the sequence number '#' is handled here.
-              XmlNode cell = doc.CreateElement("ss", "Cell", urn);
-              row.AppendChild(cell);
-              XmlNode data = doc.CreateElement("ss", "Data", urn);
-              cell.AppendChild(data);
-              const string dataType = "Number";
-              NewAttribute(data, "Type", dataType, urn);
-              data.InnerText = rowNumber.ToString();
-            }
-          }
-
-          rowNumber++;
-        }
-      }
-
-      return doc;
-    }
-
-    private static byte[] GetXmlBytes(XmlDocument doc) {
-      using (var ms = new MemoryStream()) {
-        using (var textWriter = new XmlTextWriter(ms, new UTF8Encoding(false)) {Formatting = Formatting.Indented, Namespaces = true}) {
-          doc.Save(textWriter);
-        }
-
-        return ms.ToArray();
+        return EventExporter.BuildExcelDocument(lvEvents, m_columns, m_Cached.ToList(), GetEventCaption, GetFormattedValue);
       }
     }
 
     private void CopyForExcel() {
       var doc = BuildExcelDocument();
-      using (var xmlStream = new MemoryStream(GetXmlBytes(doc))) {
+      using (var xmlStream = new MemoryStream(EventExporter.GetXmlBytes(doc))) {
         Clipboard.SetData("XML Spreadsheet", xmlStream);
       }
 
@@ -1046,7 +894,7 @@ namespace SqlProfiler {
 
       using (var sfd = new SaveFileDialog {Filter = "Excel XML|*.xml", Title = "Save the Excel XML file"}) {
         if (sfd.ShowDialog(this) != DialogResult.OK || string.IsNullOrEmpty(sfd.FileName)) return;
-        File.WriteAllBytes(sfd.FileName, GetXmlBytes(doc));
+        File.WriteAllBytes(sfd.FileName, EventExporter.GetXmlBytes(doc));
 
         MessageBox.Show(string.Format("File saved to: {0}", sfd.FileName), "Information", MessageBoxButtons.OK,
           MessageBoxIcon.Information);
