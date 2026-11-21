@@ -3,26 +3,19 @@ using System.Windows.Forms;
 
 namespace SqlProfiler {
   class ListViewNF : ListViewExtended {
-    public SortOrder SortOrder { get; set; }
-
     public ListViewNF() {
       //Activate double buffering
       this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
 
-      //Enable the OnNotifyMessage event so we get a chance to filter out 
+      //Enable the OnNotifyMessage event so we get a chance to filter out
       // Windows messages before they get to the form's WndProc
       this.SetStyle(ControlStyles.EnableNotifyMessage, true);
-
-      SortOrder = SortOrder.Ascending;
     }
 
-    public void ToggleSortOrder() {
-      if (SortOrder == SortOrder.Ascending) {
-        SortOrder = SortOrder.Descending;
-        return;
-      }
-
-      SortOrder = SortOrder.Ascending;
+    /// <summary>A click on a new column sorts it ascending, a click on the sorted column reverses the direction.</summary>
+    public void ToggleSort(int column) {
+      SortOrder = column == SortColumn && SortOrder == SortOrder.Ascending ? SortOrder.Descending : SortOrder.Ascending;
+      SortColumn = column;
     }
 
     protected override void OnNotifyMessage(Message m) {

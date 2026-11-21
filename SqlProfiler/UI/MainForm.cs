@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Xml;
+using SortOrder = System.Windows.Forms.SortOrder;
 
 namespace SqlProfiler {
 
@@ -59,6 +60,7 @@ namespace SqlProfiler {
       _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
       InitLV();
+      RestoreSortState();
 
       var portable = new UserOption("portable", true, storeSettingsInFileToolStripMenuItem, _settings);
       portable.Changed += delegate {
@@ -104,6 +106,8 @@ namespace SqlProfiler {
         _settings.SetValue("Height", Height);
         _settings.SetValue("Width", Width);
 
+        _settings.SetValue("SortColumn", lvEvents.SortColumn);
+        _settings.SetValue("SortOrder", (int) lvEvents.SortOrder);
         _settings.SetValue("MatchCase", MatchCase);
         _settings.SetValue("WholeWord", WholeWord);
         _settings.SetValue("WrapAround", WrapAround);
@@ -313,13 +317,28 @@ namespace SqlProfiler {
     }
 
     private void LvEvents_ColumnClick(object sender, ColumnClickEventArgs e) {
-      lvEvents.ToggleSortOrder();
+      lvEvents.ToggleSort(e.Column);
       lvEvents.SetSortIcon(e.Column, lvEvents.SortOrder);
-      RowSorter.Sort(_rows, e.Column, lvEvents.SortOrder, GetCellText);
+      ApplySort();
+      ShowSelectedEvent();
+    }
+
+    /// <summary>Sorts the rows by the column and direction shown in the header.</summary>
+    private void ApplySort() {
+      if (lvEvents.SortColumn < 0 || lvEvents.SortColumn >= _columns.Count || lvEvents.SortOrder == SortOrder.None) return;
+      RowSorter.Sort(_rows, lvEvents.SortColumn, lvEvents.SortOrder, GetCellText);
       _prevSelectedIndices = null;
       lvEvents.Invalidate();
       UpdateSourceBox();
-      ShowSelectedEvent();
+    }
+
+    private void RestoreSortState() {
+      var column = _settings.GetValue("SortColumn", -1);
+      if (column < 0 || column >= _columns.Count) return;
+      lvEvents.SortOrder = _settings.GetValue("SortOrder", (int) SortOrder.Ascending) == (int) SortOrder.Descending
+        ? SortOrder.Descending
+        : SortOrder.Ascending;
+      lvEvents.SortColumn = column;
     }
 
     private void LvEvents_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e) {
@@ -511,6 +530,7 @@ namespace SqlProfiler {
           "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
       }
 
+      ApplySort();
       AppendEvents(new[] {_stoppedEvent});
       UpdateButtons();
     }
