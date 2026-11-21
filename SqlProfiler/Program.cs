@@ -28,11 +28,19 @@ namespace SqlProfiler {
       Application.SetCompatibleTextRenderingDefault(false);
       Application.SetUnhandledExceptionMode(UnhandledExceptionMode.Automatic);
       AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+      Application.ThreadException += (_, e) => {
+        AppLogger.Error("Unhandled UI exception", e.Exception);
+        MessageBox.Show($"{e.Exception.Message}\r\n\r\nDetails are written to {AppLogger.FilePath}", "Error",
+          MessageBoxButtons.OK, MessageBoxIcon.Error);
+      };
+      AppLogger.Info($"Started, version {Updater.CurrentVersion}");
       Application.Run(new MainForm());
     }
 
     private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
-      MessageBox.Show(e.ExceptionObject is Exception ex ? ex.ToString() : e.ExceptionObject?.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      var text = e.ExceptionObject is Exception ex ? ex.ToString() : e.ExceptionObject?.ToString();
+      AppLogger.Error("Unhandled exception: " + text);
+      MessageBox.Show(text, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
   }
 }
