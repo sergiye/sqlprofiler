@@ -33,6 +33,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
  * `Encrypt connection` and `Trust server certificate` options in the File menu (the certificate is trusted by default)
  * Start, pause/resume and stop a running trace
  * "Run with filters" opens the trace properties dialog before the start
+ * Presets: save the current events, columns and filters under a name and apply them before the next trace (Presets button)
  * Selectable events:
    * `SQL:BatchStarting`, `SQL:BatchCompleted`
    * `SQL:StmtStarting`, `SQL:StmtCompleted`
@@ -109,6 +110,7 @@ Connection:
  * `-user`, `-u` `<user name>`
  * `-password`, `-p` `<user password>`
  * `-start` : automatically start profiling
+ * `-preset` `<name>` : use the events, columns and filters of a saved preset (the arguments after it can still change them)
 
 Limits:
  * `-maxevents`, `-m` `<value>` : maximum events in event list (5000 by default)

@@ -34,7 +34,8 @@ namespace SqlProfiler {
       };
 
     /// <summary>Applies the arguments to the trace settings. Returns true if the trace has to be started at once.</summary>
-    public static bool Apply(string[] args, TraceProperties.TraceSettings settings, Action<string, string> setSetting) {
+    public static bool Apply(string[] args, TraceProperties.TraceSettings settings, Action<string, string> setSetting,
+      Func<string, TraceProperties.TraceSettings> getPreset = null) {
       var autoStart = false;
       var i = 1;
       while (i < args.Length) {
@@ -76,6 +77,12 @@ namespace SqlProfiler {
             break;
           case "-start":
             autoStart = true;
+            break;
+          case "-preset":
+            var preset = getPreset?.Invoke(next) ?? throw new ArgumentException("Preset not found: " + next);
+            settings.EventsColumns = preset.EventsColumns;
+            settings.Filters = preset.Filters;
+            i++;
             break;
           default:
             if (EventFlags.TryGetValue(name, out var setEvent)) {

@@ -1,37 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Windows.Forms;
-using System.Xml.Serialization;
 
 namespace SqlProfiler {
   public partial class MainForm {
     private const string TraceSettingsKey = "TraceSettings";
     private const string ColumnWidthPrefix = "ColW_";
 
-    private static readonly XmlSerializer TraceSettingsSerializer = new(typeof(TraceProperties.TraceSettings));
-
     /// <summary>The events, columns and filters of the previous run, or the defaults.</summary>
     private TraceProperties.TraceSettings LoadTraceSettings() {
-      var xml = _settings.GetValue(TraceSettingsKey, "");
-      if (!string.IsNullOrEmpty(xml)) {
-        try {
-          using var reader = new StringReader(xml);
-          if (TraceSettingsSerializer.Deserialize(reader) is TraceProperties.TraceSettings stored)
-            return stored;
-        }
-        catch (Exception e) {
-          AppLogger.Warn("The stored trace settings are ignored: " + e.Message);
-        }
-      }
-
-      return TraceProperties.TraceSettings.GetDefaultSettings();
+      return TraceSettingsXml.TryDeserialize(_settings.GetValue(TraceSettingsKey, "")) ?? TraceProperties.TraceSettings.GetDefaultSettings();
     }
 
     private void SaveTraceSettings() {
-      using var writer = new StringWriter();
-      TraceSettingsSerializer.Serialize(writer, _traceSettings);
-      _settings.SetValue(TraceSettingsKey, writer.ToString());
+      _settings.SetValue(TraceSettingsKey, TraceSettingsXml.Serialize(_traceSettings));
     }
 
     /// <summary>The width of a column is remembered by its caption; the Text Data column takes the rest of the width.</summary>

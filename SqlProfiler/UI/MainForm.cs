@@ -63,6 +63,7 @@ namespace SqlProfiler {
       InitSourcePanel();
       InitQuickSearch();
       InitConnectionTools();
+      InitPresets();
 
       _traceSettings = LoadTraceSettings();
       ParseCommandLine();
@@ -182,7 +183,7 @@ namespace SqlProfiler {
 
     private void ParseCommandLine() {
       try {
-        _autoStart = CommandLineParser.Apply(Environment.GetCommandLineArgs(), _traceSettings, _settings.SetValue);
+        _autoStart = CommandLineParser.Apply(Environment.GetCommandLineArgs(), _traceSettings, _settings.SetValue, _presets.Load);
         if (string.IsNullOrEmpty(_settings.GetValue("Server", ""))) {
           _settings.SetValue("Server", @".\sqlexpress");
         }
