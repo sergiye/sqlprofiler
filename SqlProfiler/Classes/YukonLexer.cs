@@ -27,38 +27,38 @@ namespace SqlProfiler {
       rsString
     }
 
-    private readonly Sqltokens m_Tokens = new Sqltokens();
+    private readonly Sqltokens _tokens = new Sqltokens();
 
     const string IdentifierStr = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890_#$";
-    private readonly char[] m_IdentifiersArray = IdentifierStr.ToCharArray();
+    private readonly char[] _identifiersArray = IdentifierStr.ToCharArray();
     const string HexDigits = "1234567890abcdefABCDEF";
     const string NumberStr = "1234567890.-";
-    private int m_StringLen;
-    private int m_TokenPos;
-    private string m_Token = "";
-    private TokenKind m_TokenId;
-    private string m_Line;
-    private int m_Run;
+    private int _stringLen;
+    private int _tokenPos;
+    private string _token = "";
+    private TokenKind _tokenId;
+    private string _line;
+    private int _run;
 
     private TokenKind TokenId {
-      get { return m_TokenId; }
+      get { return _tokenId; }
     }
 
     private string Token {
       get {
-        /*int len = m_Run - m_TokenPos; return m_Line.Substring(m_TokenPos, len);*/
-        return m_Token;
+        /*int len = _run - _tokenPos; return _line.Substring(_tokenPos, len);*/
+        return _token;
       }
     }
 
     private SqlRange Range { get; set; }
 
     private char GetChar(int idx) {
-      return idx >= m_Line.Length ? '\x00' : m_Line[idx];
+      return idx >= _line.Length ? '\x00' : _line[idx];
     }
 
     public YukonLexer() {
-      Array.Sort(m_IdentifiersArray);
+      Array.Sort(_identifiersArray);
     }
 
     #region Colors
@@ -124,31 +124,31 @@ namespace SqlProfiler {
     private string Line {
       set {
         Range = SqlRange.rsUnknown;
-        m_Line = value;
-        m_Run = 0;
+        _line = value;
+        _run = 0;
         Next();
       }
     }
 
     private void NullProc() {
-      m_TokenId = TokenKind.tkNull;
+      _tokenId = TokenKind.tkNull;
     }
 
     // ReSharper disable InconsistentNaming
     private void LFProc() {
-      m_TokenId = TokenKind.tkSpace;
-      m_Run++;
+      _tokenId = TokenKind.tkSpace;
+      _run++;
     }
 
     private void CRProc() {
-      m_TokenId = TokenKind.tkSpace;
-      m_Run++;
-      if (GetChar(m_Run) == '\x0A') m_Run++;
+      _tokenId = TokenKind.tkSpace;
+      _run++;
+      if (GetChar(_run) == '\x0A') _run++;
     }
     // ReSharper restore InconsistentNaming
 
     private void AnsiCProc() {
-      switch (GetChar(m_Run)) {
+      switch (GetChar(_run)) {
         case '\x00':
           NullProc();
           break;
@@ -160,17 +160,17 @@ namespace SqlProfiler {
           break;
 
         default: {
-          m_TokenId = TokenKind.tkComment;
+          _tokenId = TokenKind.tkComment;
           char c;
           do {
-            if (GetChar(m_Run) == '*' && GetChar(m_Run + 1) == '/') {
+            if (GetChar(_run) == '*' && GetChar(_run + 1) == '/') {
               Range = SqlRange.rsUnknown;
-              m_Run += 2;
+              _run += 2;
               break;
             }
 
-            m_Run++;
-            c = GetChar(m_Run);
+            _run++;
+            c = GetChar(_run);
           } while (!(c == '\x00' || c == '\x0A' || c == '\x0D'));
 
           break;
@@ -179,21 +179,21 @@ namespace SqlProfiler {
     }
 
     private void AsciiCharProc() {
-      if (GetChar(m_Run) == '\x00') {
+      if (GetChar(_run) == '\x00') {
         NullProc();
       }
       else {
-        m_TokenId = TokenKind.tkString;
-        if (m_Run > 0 || Range != SqlRange.rsString || GetChar(m_Run) != '\x27') {
+        _tokenId = TokenKind.tkString;
+        if (_run > 0 || Range != SqlRange.rsString || GetChar(_run) != '\x27') {
           Range = SqlRange.rsString;
           char c;
           do {
-            m_Run++;
-            c = GetChar(m_Run);
+            _run++;
+            c = GetChar(_run);
           } while (!(c == '\x00' || c == '\x0A' || c == '\x0D' || c == '\x27'));
 
-          if (GetChar(m_Run) == '\x27') {
-            m_Run++;
+          if (GetChar(_run) == '\x27') {
+            _run++;
             Range = SqlRange.rsUnknown;
           }
         }
@@ -293,76 +293,76 @@ namespace SqlProfiler {
     }
 
     private void SpaceProc() {
-      m_TokenId = TokenKind.tkSpace;
+      _tokenId = TokenKind.tkSpace;
       char c;
       do {
-        m_Run++;
-        c = GetChar(m_Run);
+        _run++;
+        c = GetChar(_run);
       } while (!(c > '\x20' || c == '\x00' || c == '\x0A' || c == '\x0D'));
     }
 
     private void UnknownProc() {
-      m_Run++;
-      m_TokenId = TokenKind.tkUnknown;
+      _run++;
+      _tokenId = TokenKind.tkUnknown;
     }
 
     private void NumberProc() {
-      m_TokenId = TokenKind.tkNumber;
-      if (GetChar(m_Run) == '0' && (GetChar(m_Run + 1) == 'X' || GetChar(m_Run + 1) == 'x')) {
-        m_Run += 2;
-        while (HexDigits.IndexOf(GetChar(m_Run)) != -1) m_Run++;
+      _tokenId = TokenKind.tkNumber;
+      if (GetChar(_run) == '0' && (GetChar(_run + 1) == 'X' || GetChar(_run + 1) == 'x')) {
+        _run += 2;
+        while (HexDigits.IndexOf(GetChar(_run)) != -1) _run++;
         return;
       }
 
-      m_Run++;
-      m_TokenId = TokenKind.tkNumber;
-      while (NumberStr.IndexOf(GetChar(m_Run)) != -1) {
-        if (GetChar(m_Run) == '.' && GetChar(m_Run + 1) == '.') break;
-        m_Run++;
+      _run++;
+      _tokenId = TokenKind.tkNumber;
+      while (NumberStr.IndexOf(GetChar(_run)) != -1) {
+        if (GetChar(_run) == '.' && GetChar(_run + 1) == '.') break;
+        _run++;
       }
     }
 
     private void QuoteProc() {
-      m_TokenId = TokenKind.tkIdentifier;
-      m_Run++;
-      while (!(GetChar(m_Run) == '\x00' || GetChar(m_Run) == '\x0A' || GetChar(m_Run) == '\x0D')) {
-        if (GetChar(m_Run) == '\x22') {
-          m_Run++;
+      _tokenId = TokenKind.tkIdentifier;
+      _run++;
+      while (!(GetChar(_run) == '\x00' || GetChar(_run) == '\x0A' || GetChar(_run) == '\x0D')) {
+        if (GetChar(_run) == '\x22') {
+          _run++;
           break;
         }
 
-        m_Run++;
+        _run++;
       }
     }
 
     private void BracketProc() {
-      m_TokenId = TokenKind.tkIdentifier;
-      m_Run++;
-      while (!(GetChar(m_Run) == '\x00' || GetChar(m_Run) == '\x0A' || GetChar(m_Run) == '\x0D')) {
-        if (GetChar(m_Run) == ']') {
-          m_Run++;
+      _tokenId = TokenKind.tkIdentifier;
+      _run++;
+      while (!(GetChar(_run) == '\x00' || GetChar(_run) == '\x0A' || GetChar(_run) == '\x0D')) {
+        if (GetChar(_run) == ']') {
+          _run++;
           break;
         }
 
-        m_Run++;
+        _run++;
       }
     }
 
     private void SymbolProc() {
-      m_Run++;
-      m_TokenId = TokenKind.tkSymbol;
+      _run++;
+      _tokenId = TokenKind.tkSymbol;
     }
 
     private void SymbolAssignProc() {
-      m_TokenId = TokenKind.tkSymbol;
-      m_Run++;
-      if (GetChar(m_Run) == '=') m_Run++;
+      _tokenId = TokenKind.tkSymbol;
+      _run++;
+      if (GetChar(_run) == '=') _run++;
     }
 
     private void KeyHash(int pos) {
-      m_StringLen = 0;
-      while (Array.BinarySearch(m_IdentifiersArray, GetChar(pos)) >= 0) {
-        m_StringLen++;
+      _stringLen = 0;
+      while (Array.BinarySearch(_identifiersArray, GetChar(pos)) >= 0) {
+        _stringLen++;
         pos++;
       }
 
@@ -370,126 +370,126 @@ namespace SqlProfiler {
     }
 
     private TokenKind IdentKind() {
-      KeyHash(m_Run);
-      return m_Tokens[m_Line.Substring(m_TokenPos, m_Run + m_StringLen - m_TokenPos)];
+      KeyHash(_run);
+      return _tokens[_line.Substring(_tokenPos, _run + _stringLen - _tokenPos)];
     }
 
     private void IdentProc() {
-      m_TokenId = IdentKind();
-      m_Run += m_StringLen;
-      if (m_TokenId == TokenKind.tkComment) {
-        while (!(GetChar(m_Run) == '\x00' || GetChar(m_Run) == '\x0A' || GetChar(m_Run) == '\x0D')) {
-          m_Run++;
+      _tokenId = IdentKind();
+      _run += _stringLen;
+      if (_tokenId == TokenKind.tkComment) {
+        while (!(GetChar(_run) == '\x00' || GetChar(_run) == '\x0A' || GetChar(_run) == '\x0D')) {
+          _run++;
         }
       }
       else {
-        while (IdentifierStr.IndexOf(GetChar(m_Run)) != -1) m_Run++;
+        while (IdentifierStr.IndexOf(GetChar(_run)) != -1) _run++;
       }
     }
 
     private void VariableProc() {
-      if (GetChar(m_Run) == '@' && GetChar(m_Run + 1) == '@') {
-        m_Run += 2;
+      if (GetChar(_run) == '@' && GetChar(_run + 1) == '@') {
+        _run += 2;
         IdentProc();
       }
       else {
-        m_TokenId = TokenKind.tkVariable;
-        int i = m_Run;
+        _tokenId = TokenKind.tkVariable;
+        int i = _run;
         do {
           i++;
         } while (!(IdentifierStr.IndexOf(GetChar(i)) == -1));
 
-        m_Run = i;
+        _run = i;
       }
     }
 
     private void AndSymbolProc() {
-      m_TokenId = TokenKind.tkSymbol;
-      m_Run++;
-      if (GetChar(m_Run) == '=' || GetChar(m_Run) == '&') m_Run++;
+      _tokenId = TokenKind.tkSymbol;
+      _run++;
+      if (GetChar(_run) == '=' || GetChar(_run) == '&') _run++;
     }
 
     private void SlashProc() {
-      m_Run++;
-      switch (GetChar(m_Run)) {
+      _run++;
+      switch (GetChar(_run)) {
         case '*': {
           Range = SqlRange.rsComment;
-          m_TokenId = TokenKind.tkComment;
+          _tokenId = TokenKind.tkComment;
           do {
-            m_Run++;
-            if (GetChar(m_Run) == '*' && GetChar(m_Run + 1) == '/') {
+            _run++;
+            if (GetChar(_run) == '*' && GetChar(_run + 1) == '/') {
               Range = SqlRange.rsUnknown;
-              m_Run += 2;
+              _run += 2;
               break;
             }
-          } while (!(GetChar(m_Run) == '\x00' || GetChar(m_Run) == '\x0D' || GetChar(m_Run) == '\x0A'));
+          } while (!(GetChar(_run) == '\x00' || GetChar(_run) == '\x0D' || GetChar(_run) == '\x0A'));
         }
           break;
         case '=':
-          m_Run++;
-          m_TokenId = TokenKind.tkSymbol;
+          _run++;
+          _tokenId = TokenKind.tkSymbol;
           break;
         default:
-          m_TokenId = TokenKind.tkSymbol;
+          _tokenId = TokenKind.tkSymbol;
           break;
       }
     }
 
     private void PlusProc() {
-      m_TokenId = TokenKind.tkSymbol;
-      m_Run++;
-      if (GetChar(m_Run) == '=' || GetChar(m_Run) == '=') m_Run++;
+      _tokenId = TokenKind.tkSymbol;
+      _run++;
+      if (GetChar(_run) == '=' || GetChar(_run) == '=') _run++;
     }
 
     private void OrSymbolProc() {
-      m_TokenId = TokenKind.tkSymbol;
-      m_Run++;
-      if (GetChar(m_Run) == '=' || GetChar(m_Run) == '|') m_Run++;
+      _tokenId = TokenKind.tkSymbol;
+      _run++;
+      if (GetChar(_run) == '=' || GetChar(_run) == '|') _run++;
     }
 
     private void MinusProc() {
-      m_Run++;
-      if (GetChar(m_Run) == '-') {
-        m_TokenId = TokenKind.tkComment;
+      _run++;
+      if (GetChar(_run) == '-') {
+        _tokenId = TokenKind.tkComment;
         char c;
         do {
-          m_Run++;
-          c = GetChar(m_Run);
+          _run++;
+          c = GetChar(_run);
         } while (!(c == '\x00' || c == '\x0A' || c == '\x0D'));
       }
       else {
-        m_TokenId = TokenKind.tkSymbol;
+        _tokenId = TokenKind.tkSymbol;
       }
     }
 
     private void LowerProc() {
-      m_TokenId = TokenKind.tkSymbol;
-      m_Run++;
-      switch (GetChar(m_Run)) {
+      _tokenId = TokenKind.tkSymbol;
+      _run++;
+      switch (GetChar(_run)) {
         case '=':
-          m_Run++;
+          _run++;
           break;
         case '<':
-          m_Run++;
-          if (GetChar(m_Run) == '=') m_Run++;
+          _run++;
+          if (GetChar(_run) == '=') _run++;
           break;
       }
     }
 
     private void GreaterProc() {
-      m_TokenId = TokenKind.tkSymbol;
-      m_Run++;
-      if (GetChar(m_Run) == '=' || GetChar(m_Run) == '>') m_Run++;
+      _tokenId = TokenKind.tkSymbol;
+      _run++;
+      if (GetChar(_run) == '=' || GetChar(_run) == '>') _run++;
     }
 
     private void EqualProc() {
-      m_TokenId = TokenKind.tkSymbol;
-      m_Run++;
-      if (GetChar(m_Run) == '=' || GetChar(m_Run) == '>') m_Run++;
+      _tokenId = TokenKind.tkSymbol;
+      _run++;
+      if (GetChar(_run) == '=' || GetChar(_run) == '>') _run++;
     }
 
     private void Next() {
-      m_TokenPos = m_Run;
+      _tokenPos = _run;
       switch (Range) {
         case SqlRange.rsComment:
           AnsiCProc();
@@ -498,11 +498,11 @@ namespace SqlProfiler {
           AsciiCharProc();
           break;
         default:
-          DoProcTable(GetChar(m_Run));
+          DoProcTable(GetChar(_run));
           break;
       }
 
-      m_Token = m_Line.Substring(m_TokenPos, m_Run - m_TokenPos);
+      _token = _line.Substring(_tokenPos, _run - _tokenPos);
     }
   }
 }

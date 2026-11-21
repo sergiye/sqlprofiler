@@ -93,12 +93,12 @@ namespace SqlProfiler {
     private const string Fukeywords =
       "CASE,RIGHT,COALESCE,SESSION_USER,CONVERT,SYSTEM_USER,LEFT,CURRENT_TIMESTAMP,CURRENT_USER,NULLIF,USER";
 
-    private readonly Dictionary<string, YukonLexer.TokenKind> m_Words = new Dictionary<string, YukonLexer.TokenKind>();
+    private readonly Dictionary<string, YukonLexer.TokenKind> _words = new Dictionary<string, YukonLexer.TokenKind>();
 
     public YukonLexer.TokenKind this[string token] {
       get {
         token = token.ToLower();
-        return m_Words.ContainsKey(token) ? m_Words[token] : YukonLexer.TokenKind.tkUnknown;
+        return _words.ContainsKey(token) ? _words[token] : YukonLexer.TokenKind.tkUnknown;
       }
     }
 
@@ -107,8 +107,8 @@ namespace SqlProfiler {
       for (int i = 0; i < tokens.Length; i++) {
         if (tokens[i] == ',') {
           string s = curtoken.ToString().ToLower();
-          if (!m_Words.ContainsKey(s))
-            m_Words.Add(s, tokenkind);
+          if (!_words.ContainsKey(s))
+            _words.Add(s, tokenkind);
           curtoken = new StringBuilder();
         }
         else {
@@ -116,7 +116,7 @@ namespace SqlProfiler {
         }
       }
 
-      if (curtoken.Length != 0) m_Words.Add(curtoken.ToString(), tokenkind);
+      if (curtoken.Length != 0) _words.Add(curtoken.ToString(), tokenkind);
     }
 
     public Sqltokens() {

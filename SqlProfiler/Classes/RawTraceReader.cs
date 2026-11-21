@@ -869,13 +869,13 @@ namespace SqlProfiler {
   }
 
   public class ProfilerEvent {
-    internal readonly Object[] m_Events = new object[66];
-    internal ulong m_ColumnMask;
-    internal ulong m_ColumnMaskHigh;
+    internal readonly Object[] Values = new object[66];
+    internal ulong ColumnMask;
+    internal ulong ColumnMaskHigh;
 
     internal void MarkSet(int columnId) {
-      if (columnId < 64) m_ColumnMask |= 1UL << columnId;
-      else m_ColumnMaskHigh |= 1UL << (columnId - 64);
+      if (columnId < 64) ColumnMask |= 1UL << columnId;
+      else ColumnMaskHigh |= 1UL << (columnId - 64);
     }
 
     /*
@@ -923,35 +923,35 @@ order by Type_Name,trace_column_id
 
     private int GetInt(int idx) {
       if (!ColumnIsSet(idx)) return 0;
-      return m_Events[idx] is null ? 0 : (int) m_Events[idx];
+      return Values[idx] is null ? 0 : (int) Values[idx];
     }
 
     private long GetLong(int idx) {
       if (!ColumnIsSet(idx)) return 0;
-      return m_Events[idx] is null ? 0 : (long) m_Events[idx];
+      return Values[idx] is null ? 0 : (long) Values[idx];
     }
 
     private string GetString(int idx) {
       if (!ColumnIsSet(idx)) return "";
-      return m_Events[idx] is null ? "" : (string) m_Events[idx];
+      return Values[idx] is null ? "" : (string) Values[idx];
     }
 
     private byte[] GetByte(int idx) {
-      return ColumnIsSet(idx) ? (byte[]) m_Events[idx] : new byte[1];
+      return ColumnIsSet(idx) ? (byte[]) Values[idx] : new byte[1];
     }
 
     private DateTime GetDateTime(int idx) {
-      return ColumnIsSet(idx) ? (DateTime) m_Events[idx] : new DateTime(0);
+      return ColumnIsSet(idx) ? (DateTime) Values[idx] : new DateTime(0);
     }
 
     private Guid GetGuid(int idx) {
-      return ColumnIsSet(idx) ? (Guid) m_Events[idx] : Guid.Empty;
+      return ColumnIsSet(idx) ? (Guid) Values[idx] : Guid.Empty;
     }
 
     public bool ColumnIsSet(int columnId) {
       return columnId < 64
-        ? (m_ColumnMask & (1UL << columnId)) != 0
-        : (m_ColumnMaskHigh & (1UL << (columnId - 64))) != 0;
+        ? (ColumnMask & (1UL << columnId)) != 0
+        : (ColumnMaskHigh & (1UL << (columnId - 64))) != 0;
     }
 
 
@@ -1116,19 +1116,19 @@ order by trace_column_id
   public class RawTraceReader {
     private delegate void SetEventDelegate(ProfilerEvent evt, int columnId);
 
-    private DbDataReader m_Reader;
-    private readonly byte[] m_B16 = new byte[16];
-    private readonly byte[] m_B8 = new byte[8];
-    private readonly byte[] m_B2 = new byte[2];
-    private readonly byte[] m_B4 = new byte[4];
-    private readonly SqlConnection m_Conn;
+    private DbDataReader _reader;
+    private readonly byte[] _b16 = new byte[16];
+    private readonly byte[] _b8 = new byte[8];
+    private readonly byte[] _b2 = new byte[2];
+    private readonly byte[] _b4 = new byte[4];
+    private readonly SqlConnection _conn;
 
     public int TraceId { get; private set; }
 
-    private readonly SetEventDelegate[] m_Delegates = new SetEventDelegate[66];
+    private readonly SetEventDelegate[] _delegates = new SetEventDelegate[66];
 
     private bool Read() {
-      TraceIsActive = m_Reader.Read();
+      TraceIsActive = _reader.Read();
       return TraceIsActive;
     }
 
@@ -1136,11 +1136,11 @@ order by trace_column_id
 
     public void Close() {
       TraceIsActive = false;
-      m_Reader?.Close();
+      _reader?.Close();
     }
 
     public RawTraceReader(SqlConnection con) {
-      m_Conn = con;
+      _conn = con;
       SetEventDelegate evtInt = SetIntColumn;
       SetEventDelegate evtLong = SetLongColumn;
       SetEventDelegate evtString = SetStringColumn;
@@ -1148,7 +1148,7 @@ order by trace_column_id
       SetEventDelegate evtDateTime = SetDateTimeColumn;
       SetEventDelegate evtGuid = SetGuidColumn;
       /*
-      select 'm_Delegates[ProfilerEventColumns.'+Name+'] = evt'+
+      select '_delegates[ProfilerEventColumns.'+Name+'] = evt'+
       case Type_Name
                               when 'text' then 'String'
                               when 'int' then 'Int'
@@ -1163,76 +1163,76 @@ order by trace_column_id
       order by trace_column_id
 
        */
-      m_Delegates[ProfilerEventColumns.TextData] = evtString;
-      m_Delegates[ProfilerEventColumns.BinaryData] = evtByte;
-      m_Delegates[ProfilerEventColumns.DatabaseID] = evtInt;
-      m_Delegates[ProfilerEventColumns.TransactionID] = evtLong;
-      m_Delegates[ProfilerEventColumns.LineNumber] = evtInt;
-      m_Delegates[ProfilerEventColumns.NTUserName] = evtString;
-      m_Delegates[ProfilerEventColumns.NTDomainName] = evtString;
-      m_Delegates[ProfilerEventColumns.HostName] = evtString;
-      m_Delegates[ProfilerEventColumns.ClientProcessID] = evtInt;
-      m_Delegates[ProfilerEventColumns.ApplicationName] = evtString;
-      m_Delegates[ProfilerEventColumns.LoginName] = evtString;
-      m_Delegates[ProfilerEventColumns.SPID] = evtInt;
-      m_Delegates[ProfilerEventColumns.Duration] = evtLong;
-      m_Delegates[ProfilerEventColumns.StartTime] = evtDateTime;
-      m_Delegates[ProfilerEventColumns.EndTime] = evtDateTime;
-      m_Delegates[ProfilerEventColumns.Reads] = evtLong;
-      m_Delegates[ProfilerEventColumns.Writes] = evtLong;
-      m_Delegates[ProfilerEventColumns.CPU] = evtInt;
-      m_Delegates[ProfilerEventColumns.Permissions] = evtLong;
-      m_Delegates[ProfilerEventColumns.Severity] = evtInt;
-      m_Delegates[ProfilerEventColumns.EventSubClass] = evtInt;
-      m_Delegates[ProfilerEventColumns.ObjectID] = evtInt;
-      m_Delegates[ProfilerEventColumns.Success] = evtInt;
-      m_Delegates[ProfilerEventColumns.IndexID] = evtInt;
-      m_Delegates[ProfilerEventColumns.IntegerData] = evtInt;
-      m_Delegates[ProfilerEventColumns.ServerName] = evtString;
-      m_Delegates[ProfilerEventColumns.EventClass] = evtInt;
-      m_Delegates[ProfilerEventColumns.ObjectType] = evtInt;
-      m_Delegates[ProfilerEventColumns.NestLevel] = evtInt;
-      m_Delegates[ProfilerEventColumns.State] = evtInt;
-      m_Delegates[ProfilerEventColumns.Error] = evtInt;
-      m_Delegates[ProfilerEventColumns.Mode] = evtInt;
-      m_Delegates[ProfilerEventColumns.Handle] = evtInt;
-      m_Delegates[ProfilerEventColumns.ObjectName] = evtString;
-      m_Delegates[ProfilerEventColumns.DatabaseName] = evtString;
-      m_Delegates[ProfilerEventColumns.FileName] = evtString;
-      m_Delegates[ProfilerEventColumns.OwnerName] = evtString;
-      m_Delegates[ProfilerEventColumns.RoleName] = evtString;
-      m_Delegates[ProfilerEventColumns.TargetUserName] = evtString;
-      m_Delegates[ProfilerEventColumns.DBUserName] = evtString;
-      m_Delegates[ProfilerEventColumns.LoginSid] = evtByte;
-      m_Delegates[ProfilerEventColumns.TargetLoginName] = evtString;
-      m_Delegates[ProfilerEventColumns.TargetLoginSid] = evtByte;
-      m_Delegates[ProfilerEventColumns.ColumnPermissions] = evtInt;
-      m_Delegates[ProfilerEventColumns.LinkedServerName] = evtString;
-      m_Delegates[ProfilerEventColumns.ProviderName] = evtString;
-      m_Delegates[ProfilerEventColumns.MethodName] = evtString;
-      m_Delegates[ProfilerEventColumns.RowCounts] = evtLong;
-      m_Delegates[ProfilerEventColumns.RequestID] = evtInt;
-      m_Delegates[ProfilerEventColumns.XactSequence] = evtLong;
-      m_Delegates[ProfilerEventColumns.EventSequence] = evtLong;
-      m_Delegates[ProfilerEventColumns.BigintData1] = evtLong;
-      m_Delegates[ProfilerEventColumns.BigintData2] = evtLong;
-      m_Delegates[ProfilerEventColumns.GUID] = evtGuid;
-      m_Delegates[ProfilerEventColumns.IntegerData2] = evtInt;
-      m_Delegates[ProfilerEventColumns.ObjectID2] = evtLong;
-      m_Delegates[ProfilerEventColumns.Type] = evtInt;
-      m_Delegates[ProfilerEventColumns.OwnerID] = evtInt;
-      m_Delegates[ProfilerEventColumns.ParentName] = evtString;
-      m_Delegates[ProfilerEventColumns.IsSystem] = evtInt;
-      m_Delegates[ProfilerEventColumns.Offset] = evtInt;
-      m_Delegates[ProfilerEventColumns.SourceDatabaseID] = evtInt;
-      m_Delegates[ProfilerEventColumns.SqlHandle] = evtByte;
-      m_Delegates[ProfilerEventColumns.SessionLoginName] = evtString;
-      m_Delegates[ProfilerEventColumns.PlanHandle] = evtByte;
+      _delegates[ProfilerEventColumns.TextData] = evtString;
+      _delegates[ProfilerEventColumns.BinaryData] = evtByte;
+      _delegates[ProfilerEventColumns.DatabaseID] = evtInt;
+      _delegates[ProfilerEventColumns.TransactionID] = evtLong;
+      _delegates[ProfilerEventColumns.LineNumber] = evtInt;
+      _delegates[ProfilerEventColumns.NTUserName] = evtString;
+      _delegates[ProfilerEventColumns.NTDomainName] = evtString;
+      _delegates[ProfilerEventColumns.HostName] = evtString;
+      _delegates[ProfilerEventColumns.ClientProcessID] = evtInt;
+      _delegates[ProfilerEventColumns.ApplicationName] = evtString;
+      _delegates[ProfilerEventColumns.LoginName] = evtString;
+      _delegates[ProfilerEventColumns.SPID] = evtInt;
+      _delegates[ProfilerEventColumns.Duration] = evtLong;
+      _delegates[ProfilerEventColumns.StartTime] = evtDateTime;
+      _delegates[ProfilerEventColumns.EndTime] = evtDateTime;
+      _delegates[ProfilerEventColumns.Reads] = evtLong;
+      _delegates[ProfilerEventColumns.Writes] = evtLong;
+      _delegates[ProfilerEventColumns.CPU] = evtInt;
+      _delegates[ProfilerEventColumns.Permissions] = evtLong;
+      _delegates[ProfilerEventColumns.Severity] = evtInt;
+      _delegates[ProfilerEventColumns.EventSubClass] = evtInt;
+      _delegates[ProfilerEventColumns.ObjectID] = evtInt;
+      _delegates[ProfilerEventColumns.Success] = evtInt;
+      _delegates[ProfilerEventColumns.IndexID] = evtInt;
+      _delegates[ProfilerEventColumns.IntegerData] = evtInt;
+      _delegates[ProfilerEventColumns.ServerName] = evtString;
+      _delegates[ProfilerEventColumns.EventClass] = evtInt;
+      _delegates[ProfilerEventColumns.ObjectType] = evtInt;
+      _delegates[ProfilerEventColumns.NestLevel] = evtInt;
+      _delegates[ProfilerEventColumns.State] = evtInt;
+      _delegates[ProfilerEventColumns.Error] = evtInt;
+      _delegates[ProfilerEventColumns.Mode] = evtInt;
+      _delegates[ProfilerEventColumns.Handle] = evtInt;
+      _delegates[ProfilerEventColumns.ObjectName] = evtString;
+      _delegates[ProfilerEventColumns.DatabaseName] = evtString;
+      _delegates[ProfilerEventColumns.FileName] = evtString;
+      _delegates[ProfilerEventColumns.OwnerName] = evtString;
+      _delegates[ProfilerEventColumns.RoleName] = evtString;
+      _delegates[ProfilerEventColumns.TargetUserName] = evtString;
+      _delegates[ProfilerEventColumns.DBUserName] = evtString;
+      _delegates[ProfilerEventColumns.LoginSid] = evtByte;
+      _delegates[ProfilerEventColumns.TargetLoginName] = evtString;
+      _delegates[ProfilerEventColumns.TargetLoginSid] = evtByte;
+      _delegates[ProfilerEventColumns.ColumnPermissions] = evtInt;
+      _delegates[ProfilerEventColumns.LinkedServerName] = evtString;
+      _delegates[ProfilerEventColumns.ProviderName] = evtString;
+      _delegates[ProfilerEventColumns.MethodName] = evtString;
+      _delegates[ProfilerEventColumns.RowCounts] = evtLong;
+      _delegates[ProfilerEventColumns.RequestID] = evtInt;
+      _delegates[ProfilerEventColumns.XactSequence] = evtLong;
+      _delegates[ProfilerEventColumns.EventSequence] = evtLong;
+      _delegates[ProfilerEventColumns.BigintData1] = evtLong;
+      _delegates[ProfilerEventColumns.BigintData2] = evtLong;
+      _delegates[ProfilerEventColumns.GUID] = evtGuid;
+      _delegates[ProfilerEventColumns.IntegerData2] = evtInt;
+      _delegates[ProfilerEventColumns.ObjectID2] = evtLong;
+      _delegates[ProfilerEventColumns.Type] = evtInt;
+      _delegates[ProfilerEventColumns.OwnerID] = evtInt;
+      _delegates[ProfilerEventColumns.ParentName] = evtString;
+      _delegates[ProfilerEventColumns.IsSystem] = evtInt;
+      _delegates[ProfilerEventColumns.Offset] = evtInt;
+      _delegates[ProfilerEventColumns.SourceDatabaseID] = evtInt;
+      _delegates[ProfilerEventColumns.SqlHandle] = evtByte;
+      _delegates[ProfilerEventColumns.SessionLoginName] = evtString;
+      _delegates[ProfilerEventColumns.PlanHandle] = evtByte;
     }
 
     private void SetGuidColumn(ProfilerEvent evt, int columnid) {
-      m_Reader.GetBytes(2, 0, m_B16, 0, 16);
-      evt.m_Events[columnid] = new Guid(m_B16);
+      _reader.GetBytes(2, 0, _b16, 0, 16);
+      evt.Values[columnid] = new Guid(_b16);
       evt.MarkSet(columnid);
     }
 
@@ -1245,16 +1245,16 @@ order by trace_column_id
       //2 byte - min
       //2 byte - sec
       //2 byte - msec
-      m_Reader.GetBytes(2, 0, m_B16, 0, 16);
-      var year = m_B16[0] | m_B16[1] << 8;
-      var month = m_B16[2] | m_B16[3] << 8;
-      var day = m_B16[6] | m_B16[7] << 8;
-      var hour = m_B16[8] | m_B16[9] << 8;
-      var min = m_B16[10] | m_B16[11] << 8;
-      var sec = m_B16[12] | m_B16[13] << 8;
-      var msec = m_B16[14] | m_B16[15] << 8;
+      _reader.GetBytes(2, 0, _b16, 0, 16);
+      var year = _b16[0] | _b16[1] << 8;
+      var month = _b16[2] | _b16[3] << 8;
+      var day = _b16[6] | _b16[7] << 8;
+      var hour = _b16[8] | _b16[9] << 8;
+      var min = _b16[10] | _b16[11] << 8;
+      var sec = _b16[12] | _b16[13] << 8;
+      var msec = _b16[14] | _b16[15] << 8;
       try {
-        evt.m_Events[columnid] = new DateTime(year, month, day, hour, min, sec, msec);
+        evt.Values[columnid] = new DateTime(year, month, day, hour, min, sec, msec);
       }
       catch (ArgumentOutOfRangeException) {
         return;
@@ -1264,25 +1264,25 @@ order by trace_column_id
     }
 
     private void SetByteColumn(ProfilerEvent evt, int columnid) {
-      var b = new byte[(int) m_Reader[1]];
-      evt.m_Events[columnid] = b;
+      var b = new byte[(int) _reader[1]];
+      evt.Values[columnid] = b;
       evt.MarkSet(columnid);
     }
 
     private void SetStringColumn(ProfilerEvent evt, int columnid) {
-      evt.m_Events[columnid] = Encoding.Unicode.GetString((byte[]) m_Reader[2]);
+      evt.Values[columnid] = Encoding.Unicode.GetString((byte[]) _reader[2]);
       evt.MarkSet(columnid);
     }
 
     private void SetIntColumn(ProfilerEvent evt, int columnid) {
-      m_Reader.GetBytes(2, 0, m_B4, 0, 4);
-      evt.m_Events[columnid] = ToInt32(m_B4);
+      _reader.GetBytes(2, 0, _b4, 0, 4);
+      evt.Values[columnid] = ToInt32(_b4);
       evt.MarkSet(columnid);
     }
 
     private void SetLongColumn(ProfilerEvent evt, int columnid) {
-      m_Reader.GetBytes(2, 0, m_B8, 0, 8);
-      evt.m_Events[columnid] = ToInt64(m_B8);
+      _reader.GetBytes(2, 0, _b8, 0, 8);
+      evt.Values[columnid] = ToInt64(_b8);
       evt.MarkSet(columnid);
     }
 
@@ -1302,7 +1302,7 @@ order by trace_column_id
 
     public void SetEvent(int eventId, params int[] columns) {
       using var cmd = new SqlCommand
-        {Connection = m_Conn, CommandText = "sp_trace_setevent", CommandType = CommandType.StoredProcedure};
+        {Connection = _conn, CommandText = "sp_trace_setevent", CommandType = CommandType.StoredProcedure};
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Value = TraceId;
       cmd.Parameters.Add("@eventid", SqlDbType.Int).Value = eventId;
       var p = cmd.Parameters.Add("@columnid", SqlDbType.Int);
@@ -1315,7 +1315,7 @@ order by trace_column_id
 
     public void SetFilter(int columnId, int logicalOperator, int comparisonOperator, long? value) {
       using var cmd = new SqlCommand
-        {Connection = m_Conn, CommandText = "sp_trace_setfilter", CommandType = CommandType.StoredProcedure};
+        {Connection = _conn, CommandText = "sp_trace_setfilter", CommandType = CommandType.StoredProcedure};
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Value = TraceId;
       cmd.Parameters.Add("@columnid", SqlDbType.Int).Value = columnId;
       cmd.Parameters.Add("@logical_operator", SqlDbType.Int).Value = logicalOperator;
@@ -1376,7 +1376,7 @@ order by trace_column_id
 
     public void SetFilter(int columnId, int logicalOperator, int comparisonOperator, string value) {
       using var cmd = new SqlCommand
-        {Connection = m_Conn, CommandText = "sp_trace_setfilter", CommandType = CommandType.StoredProcedure};
+        {Connection = _conn, CommandText = "sp_trace_setfilter", CommandType = CommandType.StoredProcedure};
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Value = TraceId;
       cmd.Parameters.Add("@columnid", SqlDbType.Int).Value = columnId;
       cmd.Parameters.Add("@logical_operator", SqlDbType.Int).Value = logicalOperator;
@@ -1394,7 +1394,7 @@ order by trace_column_id
 
     public void CreateTrace() {
       using var cmd = new SqlCommand
-        {Connection = m_Conn, CommandText = "sp_trace_create", CommandType = CommandType.StoredProcedure};
+        {Connection = _conn, CommandText = "sp_trace_create", CommandType = CommandType.StoredProcedure};
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Direction = ParameterDirection.Output;
       cmd.Parameters.Add("@options", SqlDbType.Int).Value = 1;
       cmd.Parameters.Add("@trace_file", SqlDbType.NVarChar, 245).Value = DBNull.Value;
@@ -1426,45 +1426,45 @@ order by trace_column_id
     }
 
     public void StartTrace() {
-      ControlTrace(m_Conn, 1);
+      ControlTrace(_conn, 1);
       GetReader();
       Read();
     }
 
     private void GetReader() {
       var cmd = new SqlCommand {
-        Connection = m_Conn, CommandText = "sp_trace_getdata", CommandType = CommandType.StoredProcedure,
+        Connection = _conn, CommandText = "sp_trace_getdata", CommandType = CommandType.StoredProcedure,
         CommandTimeout = 0
       };
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Value = TraceId;
       cmd.Parameters.Add("@records", SqlDbType.Int).Value = 0;
-      m_Reader = cmd.ExecuteReader(CommandBehavior.SingleResult);
+      _reader = cmd.ExecuteReader(CommandBehavior.SingleResult);
     }
 
     public ProfilerEvent Next() {
       if (!TraceIsActive) return null;
-      var columnId = (int) m_Reader[0];
+      var columnId = (int) _reader[0];
       //skip to begin of new event
       while (columnId != 65526 && Read() && TraceIsActive) {
-        columnId = (int) m_Reader[0];
+        columnId = (int) _reader[0];
       }
 
       //start of new event
       if (columnId != 65526) return null;
       if (!TraceIsActive) return null;
       //get potential event class
-      m_Reader.GetBytes(2, 0, m_B2, 0, 2);
-      var eventClass = ToInt16(m_B2);
+      _reader.GetBytes(2, 0, _b2, 0, 2);
+      var eventClass = ToInt16(_b2);
 
       //we got new event
       if (eventClass >= 0 && eventClass < 255) {
         var evt = new ProfilerEvent();
-        evt.m_Events[27] = eventClass;
+        evt.Values[27] = eventClass;
         evt.MarkSet(27);
         while (Read()) {
-          columnId = (int) m_Reader[0];
+          columnId = (int) _reader[0];
           if (columnId > 65) return evt;
-          m_Delegates[columnId]?.Invoke(evt, columnId);
+          _delegates[columnId]?.Invoke(evt, columnId);
         }
       }
 
