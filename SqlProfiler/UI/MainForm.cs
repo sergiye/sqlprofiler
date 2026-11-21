@@ -18,6 +18,7 @@ namespace SqlProfiler {
   public partial class MainForm : Form {
     
     private RawTraceReader m_Rdr;
+    private readonly object m_eventsLock = new object();
 
     private readonly YukonLexer m_Lex = new YukonLexer();
     private SqlConnection m_Conn;
@@ -302,11 +303,10 @@ namespace SqlProfiler {
         MessageBox.Show("You should select at least 1 event", "Starting trace", MessageBoxButtons.OK,
           MessageBoxIcon.Error);
         RunProfiling(true);
+        return;
       }
 
-      {
-        RunProfiling(false);
-      }
+      RunProfiling(false);
     }
 
     private void UpdateButtons() {
@@ -385,11 +385,11 @@ namespace SqlProfiler {
       if (m_currentsettings.EventsColumns.StartTime)
         m_columns.Add(new PerfColumn {
           Caption = "Start time", Column = ProfilerEventColumns.StartTime, Width = 140,
-          Format = "yyyy-MM-dd hh:mm:ss.ffff"
+          Format = "yyyy-MM-dd HH:mm:ss.ffff"
         });
       if (m_currentsettings.EventsColumns.EndTime)
         m_columns.Add(new PerfColumn {
-          Caption = "End time", Column = ProfilerEventColumns.EndTime, Width = 140, Format = "yyyy-MM-dd hh:mm:ss.ffff"
+          Caption = "End time", Column = ProfilerEventColumns.EndTime, Width = 140, Format = "yyyy-MM-dd HH:mm:ss.ffff"
         });
       if (m_currentsettings.EventsColumns.DatabaseName)
         m_columns.Add(new PerfColumn
@@ -471,7 +471,10 @@ namespace SqlProfiler {
         return "Trace stopped";
       }
 
-      return ProfilerEvents.Names[evt.EventClass];
+      var eventClass = evt.EventClass;
+      return eventClass >= 0 && eventClass < ProfilerEvents.Names.Length && ProfilerEvents.Names[eventClass] != ""
+        ? ProfilerEvents.Names[eventClass]
+        : "Event " + eventClass;
     }
 
     private string GetFormattedValue(ProfilerEvent evt, int column, string format) {
@@ -524,14 +527,14 @@ namespace SqlProfiler {
         while (!m_NeedStop && m_Rdr.TraceIsActive) {
           var evt = m_Rdr.Next();
           if (evt != null) {
-            lock (this) {
+            lock (m_eventsLock) {
               m_events.Enqueue(evt);
             }
           }
         }
       }
       catch (Exception e) {
-        lock (this) {
+        lock (m_eventsLock) {
           if (!m_NeedStop && m_Rdr.TraceIsActive) {
             m_profilerexception = e;
           }
@@ -540,16 +543,20 @@ namespace SqlProfiler {
     }
 
     private SqlConnection GetConnection() {
-      return new SqlConnection {
-        ConnectionString =
-          tbAuth.SelectedIndex == 0
-            ? string.Format(
-              @"Data Source = {0}; Initial Catalog = master; Integrated Security=SSPI;Application Name=SqlProfiler",
-              edServer.Text)
-            : string.Format(
-              @"Data Source={0};Initial Catalog=master;User Id={1};Password='{2}';;Application Name=SqlProfiler",
-              edServer.Text, edUser.Text, edPassword.Text)
+      var builder = new SqlConnectionStringBuilder {
+        DataSource = edServer.Text,
+        InitialCatalog = "master",
+        ApplicationName = "SqlProfiler"
       };
+      if (tbAuth.SelectedIndex == 0) {
+        builder.IntegratedSecurity = true;
+      }
+      else {
+        builder.UserID = edUser.Text;
+        builder.Password = edPassword.Text;
+      }
+
+      return new SqlConnection(builder.ConnectionString);
     }
 
     private void StartProfiling() {
@@ -751,7 +758,7 @@ namespace SqlProfiler {
         }
 
         if (null != m_currentsettings.Filters.Duration) {
-          SetIntFilter(m_currentsettings.Filters.Duration * 1000,
+          SetIntFilter(m_currentsettings.Filters.Duration * 1000L,
             m_currentsettings.Filters.DurationFilterCondition, ProfilerEventColumns.Duration);
         }
 
@@ -793,14 +800,13 @@ namespace SqlProfiler {
       }
     }
 
-    private void SetIntFilter(int? value, TraceProperties.IntFilterCondition condition, int column) {
+    private void SetIntFilter(long? value, TraceProperties.IntFilterCondition condition, int column) {
       var com = new[] {
         ComparisonOperators.Equal, ComparisonOperators.NotEqual, ComparisonOperators.GreaterThan,
         ComparisonOperators.LessThan
       };
       if ((null != value)) {
-        long? v = value;
-        m_Rdr.SetFilter(column, LogicalOperators.AND, com[(int) condition], v);
+        m_Rdr.SetFilter(column, LogicalOperators.AND, com[(int) condition], value);
       }
     }
 
@@ -816,7 +822,9 @@ namespace SqlProfiler {
     }
 
     private void StartProfilerThread() {
+      m_NeedStop = true;
       m_Rdr.Close();
+      m_Thr?.Join(2000);
       m_Rdr.StartTrace();
       m_Thr = new Thread(ProfilerThread) {IsBackground = true, Priority = ThreadPriority.Lowest};
       m_NeedStop = false;
@@ -844,11 +852,12 @@ namespace SqlProfiler {
       }
 
       m_NeedStop = true;
-      if (m_Thr.IsAlive) {
+      m_Rdr.Close();
+      if (m_Thr != null && !m_Thr.Join(3000)) {
         m_Thr.Abort();
+        m_Thr.Join();
       }
 
-      m_Thr.Join();
       m_ProfilingState = ProfilingStateEnum.psStopped;
       NewEventArrived(m_EventStopped, true);
       UpdateButtons();
@@ -933,7 +942,7 @@ namespace SqlProfiler {
     private void timer1_Tick(object sender, EventArgs e) {
       Queue<ProfilerEvent> saved;
       Exception exc;
-      lock (this) {
+      lock (m_eventsLock) {
         saved = m_events;
         m_events = new Queue<ProfilerEvent>(10);
         exc = m_profilerexception;
@@ -988,7 +997,7 @@ namespace SqlProfiler {
     }
 
     private void ClearTrace() {
-      lock (lvEvents) {
+      lock (m_Cached) {
         m_Cached.Clear();
         m_itembysql.Clear();
         lvEvents.VirtualListSize = 0;
@@ -1158,14 +1167,14 @@ namespace SqlProfiler {
         }
       }
       else {
-        for (var i = lastpos - 1; i > 0; i--) {
+        for (var i = lastpos - 1; i >= 0; i--) {
           if (FindText(i)) {
             return;
           }
         }
 
         if (wrapAround) {
-          for (var i = m_Cached.Count; i > lastpos; i--) {
+          for (var i = m_Cached.Count - 1; i > lastpos; i--) {
             if (FindText(i)) {
               return;
             }
@@ -1193,7 +1202,8 @@ namespace SqlProfiler {
     private bool FindText(int i) {
       var lvi = m_Cached[i];
       var evt = (ProfilerEvent) lvi.Tag;
-      var pattern = (wholeWord ? "\\b" + lastpattern + "\\b" : lastpattern);
+      var escaped = Regex.Escape(lastpattern);
+      var pattern = wholeWord ? "\\b" + escaped + "\\b" : escaped;
       if (Regex.IsMatch(evt.TextData, pattern, (matchCase ? RegexOptions.None : RegexOptions.IgnoreCase))) {
         lvi.Focused = true;
         lastpos = i;
@@ -1212,7 +1222,7 @@ namespace SqlProfiler {
         return;
       }
 
-      PerformFind(true, false);
+      PerformFind(true, wrapAround);
     }
 
     private void exitToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -1240,7 +1250,7 @@ namespace SqlProfiler {
       CopyForExcel();
     }
 
-    private void CopyForExcel() {
+    private XmlDocument BuildExcelDocument() {
       var doc = new XmlDocument();
       var pi = doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'");
       doc.AppendChild(pi);
@@ -1342,12 +1352,22 @@ namespace SqlProfiler {
         }
       }
 
-      using (var writer = new StringWriter()) {
-        var textWriter = new XmlTextWriter(writer) {Formatting = Formatting.Indented, Namespaces = true};
-        doc.Save(textWriter);
-        var xml = writer.ToString();
-        var xmlStream = new MemoryStream();
-        xmlStream.Write(System.Text.Encoding.UTF8.GetBytes(xml), 0, xml.Length);
+      return doc;
+    }
+
+    private static byte[] GetXmlBytes(XmlDocument doc) {
+      using (var ms = new MemoryStream()) {
+        using (var textWriter = new XmlTextWriter(ms, new UTF8Encoding(false)) {Formatting = Formatting.Indented, Namespaces = true}) {
+          doc.Save(textWriter);
+        }
+
+        return ms.ToArray();
+      }
+    }
+
+    private void CopyForExcel() {
+      var doc = BuildExcelDocument();
+      using (var xmlStream = new MemoryStream(GetXmlBytes(doc))) {
         Clipboard.SetData("XML Spreadsheet", xmlStream);
       }
 
@@ -1374,8 +1394,10 @@ namespace SqlProfiler {
     }
 
     private void deleteSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
-      for (var i = lvEvents.SelectedIndices.Count - 1; i >= 0; i--) {
-        m_Cached.RemoveAt(lvEvents.SelectedIndices[i]);
+      lock (m_Cached) {
+        for (var i = lvEvents.SelectedIndices.Count - 1; i >= 0; i--) {
+          m_Cached.RemoveAt(lvEvents.SelectedIndices[i]);
+        }
       }
 
       lvEvents.VirtualListSize = m_Cached.Count;
@@ -1383,9 +1405,12 @@ namespace SqlProfiler {
     }
 
     private void keepSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
-      for (var i = m_Cached.Count - 1; i >= 0; i--) {
-        if (!lvEvents.SelectedIndices.Contains(i)) {
-          m_Cached.RemoveAt(i);
+      lock (m_Cached) {
+        var selected = new HashSet<int>(lvEvents.SelectedIndices.Cast<int>());
+        for (var i = m_Cached.Count - 1; i >= 0; i--) {
+          if (!selected.Contains(i)) {
+            m_Cached.RemoveAt(i);
+          }
         }
       }
 
@@ -1394,128 +1419,11 @@ namespace SqlProfiler {
     }
 
     private void SaveToExcelXmlFile() {
-      var doc = new XmlDocument();
-      var pi = doc.CreateProcessingInstruction("mso-application", "progid='Excel.Sheet'");
-      doc.AppendChild(pi);
-      const string urn = "urn:schemas-microsoft-com:office:spreadsheet";
-      XmlNode root = doc.CreateElement("ss", "Workbook", urn);
-      NewAttribute(root, "xmlns:ss", urn);
-      doc.AppendChild(root);
+      var doc = BuildExcelDocument();
 
-      XmlNode styles = doc.CreateElement("ss", "Styles", urn);
-      root.AppendChild(styles);
-      XmlNode style = doc.CreateElement("ss", "Style", urn);
-      styles.AppendChild(style);
-      NewAttribute(style, "ID", "s62", urn);
-      XmlNode font = doc.CreateElement("ss", "Font", urn);
-      style.AppendChild(font);
-      NewAttribute(font, "Bold", "1", urn);
-
-
-      XmlNode worksheet = doc.CreateElement("ss", "Worksheet", urn);
-      root.AppendChild(worksheet);
-      NewAttribute(worksheet, "Name", "Sql Trace", urn);
-      XmlNode table = doc.CreateElement("ss", "Table", urn);
-      worksheet.AppendChild(table);
-      NewAttribute(table, "ExpandedColumnCount", m_columns.Count.ToString(CultureInfo.InvariantCulture), urn);
-
-      foreach (ColumnHeader lv in lvEvents.Columns) {
-        XmlNode r = doc.CreateElement("ss", "Column", urn);
-        NewAttribute(r, "AutoFitWidth", "0", urn);
-        NewAttribute(r, "Width", lv.Width.ToString(CultureInfo.InvariantCulture), urn);
-        table.AppendChild(r);
-      }
-
-      XmlNode row = doc.CreateElement("ss", "Row", urn);
-      table.AppendChild(row);
-      foreach (ColumnHeader lv in lvEvents.Columns) {
-        XmlNode cell = doc.CreateElement("ss", "Cell", urn);
-        row.AppendChild(cell);
-        NewAttribute(cell, "StyleID", "s62", urn);
-        XmlNode data = doc.CreateElement("ss", "Data", urn);
-        cell.AppendChild(data);
-        NewAttribute(data, "Type", "String", urn);
-        data.InnerText = lv.Text;
-      }
-
-      lock (m_Cached) {
-        long rowNumber = 1;
-        foreach (var lvi in m_Cached) {
-          row = doc.CreateElement("ss", "Row", urn);
-          table.AppendChild(row);
-          for (var i = 0; i < m_columns.Count; i++) {
-            var pc = m_columns[i];
-            if (pc.Column != -1) {
-              XmlNode cell = doc.CreateElement("ss", "Cell", urn);
-              row.AppendChild(cell);
-              XmlNode data = doc.CreateElement("ss", "Data", urn);
-              cell.AppendChild(data);
-              string dataType;
-              switch (ProfilerEventColumns.ProfilerColumnDataTypes[pc.Column]) {
-                case ProfilerColumnDataType.Int:
-                case ProfilerColumnDataType.Long:
-                  dataType = "Number";
-                  break;
-                case ProfilerColumnDataType.DateTime:
-                  dataType = "String";
-                  break;
-                default:
-                  dataType = "String";
-                  break;
-              }
-
-              if (ProfilerEventColumns.EventClass == pc.Column) dataType = "String";
-              NewAttribute(data, "Type", dataType, urn);
-              if (ProfilerEventColumns.EventClass == pc.Column) {
-                data.InnerText = GetEventCaption(((ProfilerEvent) (lvi.Tag)));
-              }
-              else {
-                data.InnerText = pc.Column == -1
-                  ? ""
-                  : GetFormattedValue((ProfilerEvent) (lvi.Tag), pc.Column,
-                      ProfilerEventColumns.ProfilerColumnDataTypes[pc.Column] == ProfilerColumnDataType.DateTime
-                        ? pc.Format
-                        : "") ??
-                    "";
-              }
-            }
-            else {
-              //The export of the sequence number '#' is handled here.
-              XmlNode cell = doc.CreateElement("ss", "Cell", urn);
-              row.AppendChild(cell);
-              XmlNode data = doc.CreateElement("ss", "Data", urn);
-              cell.AppendChild(data);
-              const string dataType = "Number";
-              NewAttribute(data, "Type", dataType, urn);
-              data.InnerText = rowNumber.ToString();
-            }
-          }
-
-          rowNumber++;
-        }
-      }
-
-      var sfd = new SaveFileDialog();
-      sfd.Filter = "Excel XML|*.xml";
-      sfd.Title = "Save the Excel XML FIle";
-      sfd.ShowDialog();
-
-      if (!string.IsNullOrEmpty(sfd.FileName)) {
-        using (var writer = new StringWriter()) {
-          var textWriter = new XmlTextWriter(writer) {
-            Formatting = Formatting.Indented,
-            Namespaces = true
-          };
-          doc.Save(textWriter);
-          var xml = writer.ToString();
-          var xmlStream = new MemoryStream();
-          xmlStream.Write(System.Text.Encoding.UTF8.GetBytes(xml), 0, xml.Length);
-          xmlStream.Position = 0;
-          var fs = new FileStream(sfd.FileName, FileMode.Create, FileAccess.Write);
-          xmlStream.WriteTo(fs);
-          fs.Close();
-          xmlStream.Close();
-        }
+      using (var sfd = new SaveFileDialog {Filter = "Excel XML|*.xml", Title = "Save the Excel XML file"}) {
+        if (sfd.ShowDialog(this) != DialogResult.OK || string.IsNullOrEmpty(sfd.FileName)) return;
+        File.WriteAllBytes(sfd.FileName, GetXmlBytes(doc));
 
         MessageBox.Show(string.Format("File saved to: {0}", sfd.FileName), "Information", MessageBoxButtons.OK,
           MessageBoxIcon.Information);
