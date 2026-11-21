@@ -32,7 +32,7 @@ namespace SqlProfiler {
     }
 
     private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
-      MessageBox.Show(((Exception) e.ExceptionObject).Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      MessageBox.Show(e.ExceptionObject is Exception ex ? ex.ToString() : e.ExceptionObject?.ToString(), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
   }
 }
