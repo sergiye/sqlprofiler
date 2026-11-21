@@ -55,6 +55,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
  * Find in the "Text data" column: forward/backward search, match case, whole word, wrap around (`Ctrl+F`, `F3`); works while the trace is running (auto scroll is switched off then)
  * Select all, delete selected, keep only selected events, clear the trace window
  * Auto scroll to the latest event
+ * Rows of errors (`User Error Message`) and blocked process reports are highlighted; slow events can be highlighted by a threshold (View - Highlight slow events)
  * Context menu of a row: copy text, copy as one line, search for this text (or for the text selected in the bottom panel), show only this SPID, show only/hide the application, login, database or host of the event
 
 ### Export

@@ -60,6 +60,7 @@ namespace SqlProfiler {
       InitStatusBar();
       InitCopyText();
       InitRowMenu();
+      InitHighlight();
 
       _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
@@ -148,6 +149,7 @@ namespace SqlProfiler {
       _lexer.FunctionColor = Theme.Current.HyperlinkColor;
       _lexer.ValueColor = Theme.Current.WarnColor;
       _lexer.CommentColor = Theme.Current.MessageColor;
+      lvEvents?.Invalidate();
     }
 
     private void InitializeTheme() {
@@ -352,6 +354,8 @@ namespace SqlProfiler {
 
     private ListViewItem CreateItem(EventRow row) {
       var item = new ListViewItem(row.Caption) {Tag = row};
+      if (GetRowBackColor(row) is { } back)
+        item.BackColor = back;
       var cells = new string[_columns.Count - 1];
       for (var i = 1; i < _columns.Count; i++)
         cells[i - 1] = GetCellText(row, i);
