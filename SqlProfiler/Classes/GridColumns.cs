@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
@@ -8,7 +9,7 @@ namespace SqlProfiler {
 
     private const string TimeFormat = "yyyy-MM-dd HH:mm:ss.ffff";
 
-    public static List<PerfColumn> Build(TraceProperties.TraceEventsColumns options) {
+    public static List<PerfColumn> Build(TraceProperties.TraceEventsColumns options, float scale = 1f) {
       var columns = new List<PerfColumn> {
         new() {Caption = "Event Class", Column = ProfilerEventColumns.EventClass, Width = 122},
         new() {Caption = "Text Data", Column = ProfilerEventColumns.TextData, Width = 255},
@@ -34,6 +35,8 @@ namespace SqlProfiler {
         columns.Add(new PerfColumn {Caption = "Host name", Column = ProfilerEventColumns.HostName, Width = 70});
 
       columns.Add(new PerfColumn {Caption = "#", Column = -1, Width = 53, Alignment = HorizontalAlignment.Right});
+      foreach (var column in columns)
+        column.Width = (int) Math.Round(column.Width * scale);
       return columns;
     }
   }

@@ -21,7 +21,9 @@ namespace SqlProfiler {
       for (var i = 0; i < columns.Count; i++) {
         if (i == GridColumns.TextDataIndex) continue;
         var width = _settings.GetValue(ColumnWidthPrefix + columns[i].Caption, columns[i].Width);
-        if (width >= 20 && width <= 2000) columns[i].Width = width;
+        if (width < 20 || width > 4000) continue;
+        columns[i].Width = width;
+        columns[i].UserWidth = _settings.Contains(ColumnWidthPrefix + columns[i].Caption);
       }
     }
 

@@ -22,7 +22,16 @@ namespace SqlProfiler {
       for (var i = 0; i < items.Length; i++)
         contextMenu.Items.Insert(i, items[i]);
 
-      contextMenu.Opening += (_, _) => UpdateRowMenu();
+      contextMenu.Opening += (_, e) => {
+        // the list has one context menu: over the column header it is the menu of the columns
+        if (lvEvents.IsOverHeader(lvEvents.PointToClient(Cursor.Position))) {
+          e.Cancel = true;
+          ShowColumnsMenu(Cursor.Position);
+          return;
+        }
+
+        UpdateRowMenu();
+      };
     }
 
     /// <summary>The row the commands of the menu work with: the focused one or the first selected one.</summary>

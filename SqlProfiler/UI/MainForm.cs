@@ -67,6 +67,7 @@ namespace SqlProfiler {
       InitConnectionTools();
       InitPresets();
       InitTraceFile();
+      InitLiveSort();
 
       _traceSettings = LoadTraceSettings();
       ParseCommandLine();
@@ -277,8 +278,9 @@ namespace SqlProfiler {
     }
 
     private void InitGridColumns() {
-      _columns = GridColumns.Build(_traceSettings.EventsColumns);
+      _columns = GridColumns.Build(_traceSettings.EventsColumns, DpiScale);
       RestoreColumnWidths(_columns);
+      FitColumnsToWidth(_columns);
       lvEvents.BeginUpdate();
       lvEvents.SizeChanged -= LvEvents_SizeChanged;
       lvEvents.ColumnWidthChanged -= LvEvents_ColumnWidthChanged;
@@ -304,7 +306,7 @@ namespace SqlProfiler {
       }
 
       var width = lvEvents.Width - otherColumnsWidth - SystemInformation.VerticalScrollBarWidth;
-      lvEvents.Columns[GridColumns.TextDataIndex].Width = Math.Max(width, MinFixedColumnWidth);
+      lvEvents.Columns[GridColumns.TextDataIndex].Width = Math.Max(width, MinTextColumnWidth);
     }
 
     private void LvEvents_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e) {
@@ -330,13 +332,41 @@ namespace SqlProfiler {
       lvEvents.ToggleSort(e.Column);
       lvEvents.SetSortIcon(e.Column, lvEvents.SortOrder);
       ApplySort();
-      ShowSelectedEvent();
+      var focusedIndex = FocusedIndex;
+      if (focusedIndex >= 0) lvEvents.EnsureVisible(focusedIndex);
     }
 
-    /// <summary>Sorts the rows by the column and direction shown in the header.</summary>
+    private bool IsSorted => lvEvents.SortColumn >= 0 && lvEvents.SortColumn < _columns.Count && lvEvents.SortOrder != SortOrder.None;
+
+    /// <summary>Sorts the rows by the column and direction shown in the header. The selected rows and the focused row stay selected.</summary>
     private void ApplySort() {
-      if (lvEvents.SortColumn < 0 || lvEvents.SortColumn >= _columns.Count || lvEvents.SortOrder == SortOrder.None) return;
+      if (!IsSorted) return;
+
+      var selected = new HashSet<EventRow>(lvEvents.SelectedIndices.Cast<int>().Where(i => i < _rows.Count).Select(i => _rows[i]));
+      var focusedIndex = FocusedIndex;
+      var focused = focusedIndex >= 0 && focusedIndex < _rows.Count ? _rows[focusedIndex] : null;
+
       RowSorter.Sort(_rows, lvEvents.SortColumn, lvEvents.SortOrder, GetCellText);
+
+      lvEvents.BeginUpdate();
+      _dontUpdateSource = true;
+      try {
+        lvEvents.SelectedIndices.Clear();
+        if (selected.Count > 0) {
+          for (var i = 0; i < _rows.Count; i++)
+            if (selected.Contains(_rows[i])) lvEvents.SelectedIndices.Add(i);
+        }
+
+        if (focused is not null) {
+          var index = _rows.IndexOf(focused);
+          if (index >= 0) lvEvents.Items[index].Focused = true;
+        }
+      }
+      finally {
+        _dontUpdateSource = false;
+        lvEvents.EndUpdate();
+      }
+
       _prevSelectedIndices = null;
       lvEvents.Invalidate();
       UpdateSourceBox();
@@ -602,6 +632,7 @@ namespace SqlProfiler {
 
       if (events.Count > 0) {
         AppendEvents(events);
+        if (_liveSort) ApplySort();
       }
       else if (TrimRows()) {
         lvEvents.VirtualListSize = _rows.Count;
