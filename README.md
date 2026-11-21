@@ -14,9 +14,68 @@ Here's a preview of the app's UI running on Windows 10:
 
 [<img src="https://github.com/sergiye/sqlprofiler/raw/master/preview.png" alt="preview" width="300"/>](https://github.com/sergiye/sqlprofiler/raw/master/preview.png)
 
-Also there are:
- - `Auto`/`Light`/`Dark` themes integrated into executable.
- - Custom `themes` supported from external files
+## Download Latest Version
+
+The published version can be obtained from [releases](https://github.com/sergiye/sqlprofiler/releases) page, or get the newer one directly from:
+[Latest Version](https://github.com/sergiye/sqlprofiler/releases/latest)
+
+## Requirements
+ * Windows with .NET Framework 4.8
+ * SQL Server 2005 or later (LocalDB, Express, Developer, Standard, Enterprise)
+ * A login with the `ALTER TRACE` permission on the server (membership in `sysadmin` also works)
+
+## Features
+
+### Tracing
+ * Server-side trace created via `sp_trace_create`/`sp_trace_setevent`, events are streamed to the app with `sp_trace_getdata`
+ * Windows or SQL Server authentication
+ * Start, pause/resume and stop a running trace
+ * "Run with filters" opens the trace properties dialog before the start
+ * Selectable events:
+   * `SQL:BatchStarting`, `SQL:BatchCompleted`
+   * `SQL:StmtStarting`, `SQL:StmtCompleted`
+   * `RPC:Starting`, `RPC:Completed`
+   * `SP:StmtStarting`, `SP:StmtCompleted`
+   * `Audit Login`/`Audit Logout`, `ExistingConnection`
+   * `User Error Message`, `Blocked process report`
+ * Selectable columns: Start time, End time, Database name, Object name, Application name, Host name (in addition to Event Class, Text Data, Login Name, CPU, Reads, Writes, Duration, SPID that are always shown)
+ * Events produced by SqlProfiler itself are excluded automatically
+ * Events per second statistics (last/average) in the status bar
+ * The list keeps only the latest N events (5000 by default, configurable)
+
+### Filters
+ * Server-side filters applied while tracing: CPU, Reads, Writes, Duration, SPID (`=`, `<>`, `>`, `<`) and Login name, Host name, Database name, Application name, Text data (`like`/`not like`)
+ * Maximum events count
+ * "Filter Captured Events" applies the same filters to events that are already captured, "Clear Captured Filters" restores the full list
+
+### Working with the captured events
+ * Virtual list with thousands of events, sortable by any column (numeric columns are sorted as numbers)
+ * Text data of selected events is shown in the bottom panel with T-SQL syntax highlighting; several events can be selected at once
+ * Find in the "Text data" column: forward/backward search, match case, whole word, wrap around (`Ctrl+F`, `F3`)
+ * Select all, delete selected, keep only selected events, clear the trace window
+ * Auto scroll to the latest event
+
+### Export
+ * Copy all/selected events to clipboard as XML
+ * Copy all events to clipboard in Excel's XML Spreadsheet format
+ * Save all events to an Excel XML file
+
+### Appearance and settings
+ * `Auto`/`Light`/`Dark` themes integrated into executable, `Auto` follows the system theme
+ * Custom themes from external files (see below)
+ * Stay on top (`Ctrl+T`), window opacity is changed with the mouse wheel over the window
+ * Window position, size, connection settings, search options and selected theme are remembered
+ * Settings can be stored in a file next to the executable (portable mode) or in the user profile
+ * Built-in update check (`Ctrl+U`)
+
+### Keyboard shortcuts
+ * `Alt+S` start, `Alt+P` pause, `Alt+T` stop trace
+ * `Ctrl+F` find, `F3` find next, `Ctrl+A` select all
+ * `Ctrl+Delete` delete selected, `Alt+Delete` keep selected, `Ctrl+Shift+Delete` clear trace window
+ * `Ctrl+S` auto scroll, `Ctrl+T` stay on top
+ * `Ctrl+U` check for updates, `F1` about, `Ctrl+F1` open site, `Ctrl+W` exit
+
+## Custom themes
 
 To add custom theme to the app, just create a `themes` folder next to the executable file and place any {themeName}.json files there.
 Custom theme.json file content example:
@@ -36,27 +95,33 @@ Custom theme.json file content example:
 ```
 Don't forget to restart the app to scan for new theme files!
 
-## Download Latest Version
+## Command-line parameters
+Can be used to set default GUI values.
 
-The published version can be obtained from [releases](https://github.com/sergiye/sqlprofiler/releases) page, or get the newer one directly from:
-[Latest Version](https://github.com/sergiye/sqlprofiler/releases/latest)
+Connection:
+ * `-server`, `-s` `<server name>`
+ * `-user`, `-u` `<user name>`
+ * `-password`, `-p` `<user password>`
+ * `-start` : automatically start profiling
 
-## Features
- * Tracing of basic set of events (Batch/RPC/SP:Stmt Starting/Completed, Audit login/logout, User error messages, Blocked Process report) and columns (Event Class, Text Data,Login, CPU, Reads, Writes, Duration, SPID, Start/End time, Database/Object/Application name) - both selectable
- * Filters on most data columns
- * Copy all/selected event rows to clipboard in form of XML 
- * Find in "Text data" column
- * Export data in Excel's clipboard format
+Limits:
+ * `-maxevents`, `-m` `<value>` : maximum events in event list (5000 by default)
+ * `-duration`, `-d` `<min duration, ms>` : sets filter on duration column
 
+Events (all of them are off by default unless selected in the trace properties):
+ * `-batchcompleted`, `-batchstarting`
+ * `-rpccompleted`, `-rpcstarting`
+ * `-spstmtcompleted`, `-spstmtstarting`
+ * `-existingconnection`, `-loginlogout`
 
-## Command-line parameters 
-Can be used to set default GUI values
- * -server, -s  <server name>
- * -user, -u  <user name>
- * -password, -p <user password>
- * -maxevents, -m <value> : set maximum events in event list (1000 by default)
- * -duration, -d <min duration> : sets filter on duration column
- * -start  :  automatically start profiling
+Filters, `-<column> <condition> <value>`:
+ * numeric columns `-cpu`, `-duration`, `-reads`, `-writes`, `-spid` with conditions `equal`/`eq`/`=`, `notequal`/`ne`/`!=`/`<>`, `greaterthan`/`ge`/`>`, `lessthan`/`le`/`<`
+ * text columns `-databasename`, `-loginname`, `-hostname`, `-textdata`, `-applicationname` with conditions `like`/`eq`/`=`, `notlike`
+
+Example:
+```
+SqlProfiler.exe -s .\sqlexpress -u sa -p secret -batchcompleted -rpccompleted -duration > 100 -applicationname like MyApp -start
+```
 
 ## How can I help improve it?
 The sqlprofiler team welcomes feedback and contributions!<br/>
@@ -64,13 +129,16 @@ You can check if it works properly on your PC. If you notice any inaccuracies, p
 
 Also, don't forget to ★ star ★ the repository to help other people find it.
 
-<!-- [![Star History Chart](https://api.star-history.com/svg?repos=sergiye/sqlprofiler&type=Date)](https://star-history.com/#sergiye/sqlprofiler&Date) -->
-
-[![Stargazers repo roster for @sergiye/sqlprofiler](https://reporoster.com/stars/sergiye/sqlprofiler)](https://github.com/sergiye/sqlprofiler/stargazers)
-
-## Donate!
-Every [cup of coffee](https://patreon.com/SergiyE) you donate will help this app become better and let me know that this project is in demand.
+## Donate
+If you find this project useful, consider [supporting the author](https://patreon.com/SergiyE).
 
 ## License
 
+This program is free to use for **personal, home and other non-commercial purposes only**.
+
+Any commercial use is not allowed without prior written permission from the author. This includes use inside a company or organization, bundling it with or into commercial products or services, and selling it or charging for access to it. For commercial licensing, please contact the author through [GitHub issues](https://github.com/sergiye/sqlprofiler/issues).
+
+You may share unmodified copies of the program free of charge, as long as they are used under the same terms.
+
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
