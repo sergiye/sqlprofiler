@@ -62,6 +62,7 @@ namespace SqlProfiler {
       InitHighlight();
       InitSourcePanel();
       InitQuickSearch();
+      InitConnectionTools();
 
       _traceSettings = LoadTraceSettings();
       ParseCommandLine();
@@ -87,8 +88,8 @@ namespace SqlProfiler {
       helpToolStripMenuItem.DropDownItems.Insert(helpToolStripMenuItem.DropDownItems.IndexOf(aboutToolStripMenuItem), openLogItem);
 
       edServer.Text = _settings.GetValue("Server", ".");
-      edUser.Text = _settings.GetValue("User", "sa");
-      edPassword.Text = _settings.GetValue("Password", "sa");
+      edUser.Text = _settings.GetValue("User", "");
+      edPassword.Text = _settings.GetValue("Password", "");
       tbAuth.SelectedIndex = string.IsNullOrEmpty(edUser.Text) ? 0 : 1;
       if (_autoStart) RunProfiling(false);
       UpdateButtons();
@@ -507,6 +508,7 @@ namespace SqlProfiler {
         else {
           _session.Start(_traceSettings);
           _activeServer = edServer.Text;
+          RememberServer(_activeServer);
           _traceClock.Restart();
           _trimmedCount = 0;
           InitGridColumns();
