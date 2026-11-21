@@ -1,15 +1,15 @@
+using sergiye.Common;
 using System;
 using System.IO;
 using System.Text;
 
 namespace SqlProfiler {
-  /// <summary>Writes errors and important events to %LocalAppData%\SqlProfiler\SqlProfiler.log. Never throws and never logs captured SQL text or passwords.</summary>
+  /// <summary>Writes errors and important events to SqlProfiler.log next to the executable, so a portable copy leaves nothing elsewhere in the system. Never throws and never logs captured SQL text or passwords.</summary>
   internal static class AppLogger {
     private const long MaxFileSize = 1024 * 1024;
     private static readonly object Sync = new();
 
-    public static string FilePath { get; } = Path.Combine(
-      Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SqlProfiler", "SqlProfiler.log");
+    public static string FilePath { get; } = Path.ChangeExtension(Updater.CurrentFileLocation, ".log");
 
     public static void Info(string message) => Write("INFO", message, null);
 
@@ -26,13 +26,10 @@ namespace SqlProfiler {
           text.AppendLine(exception.ToString());
 
         lock (Sync) {
-          Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
           var file = new FileInfo(FilePath);
-          if (file.Exists && file.Length > MaxFileSize) {
-            File.Copy(FilePath, FilePath + ".old", true);
+          // the log is a short diagnostic aid: when it grows too big it starts again instead of leaving extra files
+          if (file.Exists && file.Length > MaxFileSize)
             File.Delete(FilePath);
-          }
-
           File.AppendAllText(FilePath, text.ToString(), Encoding.UTF8);
         }
       }

@@ -68,6 +68,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
  * Window position, size, connection settings, search options and selected theme are remembered
  * Settings can be stored in a file next to the executable (portable mode) or in the user profile
  * Built-in update check (`Ctrl+U`)
+ * Errors are logged to `SqlProfiler.log` next to the executable (Help - Open log file), nothing is written elsewhere
 
 ### Keyboard shortcuts
  * `Alt+S` start, `Alt+P` pause, `Alt+T` stop trace
