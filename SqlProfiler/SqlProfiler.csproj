@@ -26,9 +26,39 @@
     <Compile Update="UI\TraceProperties.cs" SubType="Form" />
     <Compile Update="UI\ListViewNF.cs" SubType="Component" />
   </ItemGroup>
-  <ItemGroup>
+  <PropertyGroup>
+    <CommonSourcesDir>$(MSBuildThisFileDirectory)..\..\common\</CommonSourcesDir>
+    <UseLocalCommon Condition="'$(UseLocalCommon)' == '' And Exists('$(CommonSourcesDir)sergiye.Common')">true</UseLocalCommon>
+    <UseLocalCommon Condition="'$(UseLocalCommon)' == ''">false</UseLocalCommon>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(UseLocalCommon)' == 'true'">
+    <EmbeddedResource Include="$(CommonSourcesDir)themes\*.json" Link="themes\%(Filename)%(Extension)" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common\Extensions\JsonExtensions.cs" Link="Common\JsonExtensions.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common\Tools\ISettings.cs" Link="Common\ISettings.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common\Tools\Updater.cs" Link="Common\Updater.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common\Tools\OSHelper.cs" Link="Common\OSHelper.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common\Win\WinApiHelper.cs" Link="Common\WinApiHelper.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\Theme.cs" Link="Common\Themes\Theme.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\LightTheme.cs" Link="Common\Themes\LightTheme.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\DarkTheme.cs" Link="Common\Themes\DarkTheme.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\CustomTheme.cs" Link="Common\Themes\CustomTheme.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\ThemeDraw.cs" Link="Common\Themes\ThemeDraw.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\ThemedProfessionalRenderer.cs" Link="Common\Themes\ThemedProfessionalRenderer.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\ThemedTitleBar.cs" Link="Common\Themes\ThemedTitleBar.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\ThemedWindowTitle.cs" Link="Common\Themes\ThemedWindowTitle.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\ThemeSupport.cs" Link="Common\Themes\ThemeSupport.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\ToolStripRadioButtonMenuItem.cs" Link="Common\ToolStripRadioButtonMenuItem.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\RadioButtonMenuItem.cs" Link="Common\RadioButtonMenuItem.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\PersistentSettings.cs" Link="Common\PersistentSettings.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common\Tools\Crasher.cs" Link="Common\Crasher.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\UserOption.cs" Link="Common\UserOption.cs" />
+    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\ThemedToolStripRenderer.cs" Link="Common\Themes\ThemedToolStripRenderer.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseLocalCommon)' != 'true'">
     <PackageReference Include="SergiyE.Common" Version="1.*" />
     <PackageReference Include="SergiyE.Common.UI" Version="1.*" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Costura.Fody">
       <PrivateAssets>all</PrivateAssets>
       <Version>4.1.0</Version>

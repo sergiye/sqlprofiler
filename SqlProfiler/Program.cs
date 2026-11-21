@@ -9,7 +9,7 @@ namespace SqlProfiler {
     [STAThread]
     static void Main() {
 
-      if (!OperatingSystemHelper.IsCompatible(true, out var errorMessage, out var fixAction)) {
+      if (!OSHelper.IsCompatible(true, out var errorMessage, out var fixAction)) {
 
         if (fixAction != null) {
           if (MessageBox.Show(errorMessage, Updater.ApplicationName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) {
