@@ -64,6 +64,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
  * Copy all/selected events to clipboard as XML
  * Copy all events to clipboard in Excel's XML Spreadsheet format
  * Save all events to an Excel XML file
+ * Save the captured events to a compressed trace file (`.sptrace`) and open it later (File menu)
 
 ### Appearance and settings
  * `Auto`/`Light`/`Dark` themes integrated into executable, `Auto` follows the system theme

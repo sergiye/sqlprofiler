@@ -64,6 +64,7 @@ namespace SqlProfiler {
       InitQuickSearch();
       InitConnectionTools();
       InitPresets();
+      InitTraceFile();
 
       _traceSettings = LoadTraceSettings();
       ParseCommandLine();
