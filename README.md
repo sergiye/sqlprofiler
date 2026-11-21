@@ -52,7 +52,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
 ### Working with the captured events
  * Virtual list with thousands of events, sortable by any column (numeric columns are sorted as numbers)
  * Text data of selected events is shown in the bottom panel with T-SQL syntax highlighting; several events can be selected at once; "Format SQL" puts the clauses on separate lines, "Copy" copies the text of the panel
- * Find in the "Text data" column: forward/backward search, match case, whole word, wrap around (`Ctrl+F`, `F3`); works while the trace is running (auto scroll is switched off then)
+ * Quick search bar (`Ctrl+F`): finds while you type, highlights the matches in the bottom panel, shows "n of N", Enter/`F3` - next, Shift+Enter/`Shift+F3` - previous, match case and whole word options, `Esc` closes; works while the trace is running (auto scroll is switched off then)
  * Select all, delete selected, keep only selected events, clear the trace window
  * Auto scroll to the latest event
  * Rows of errors (`User Error Message`) and blocked process reports are highlighted; slow events can be highlighted by a threshold (View - Highlight slow events)

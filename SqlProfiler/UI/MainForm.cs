@@ -40,7 +40,6 @@ namespace SqlProfiler {
     internal string LastPattern { get; set; } = "";
     internal bool MatchCase { get; set; }
     internal bool WholeWord { get; set; }
-    internal bool WrapAround { get; set; }
 
     public MainForm() {
       _settings = new PersistentSettings();
@@ -62,6 +61,7 @@ namespace SqlProfiler {
       InitRowMenu();
       InitHighlight();
       InitSourcePanel();
+      InitQuickSearch();
 
       _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
@@ -103,7 +103,8 @@ namespace SqlProfiler {
 
         MatchCase = _settings.GetValue("MatchCase", false);
         WholeWord = _settings.GetValue("WholeWord", false);
-        WrapAround = _settings.GetValue("WrapAround", false);
+        _tbMatchCase.Checked = MatchCase;
+        _tbWholeWord.Checked = WholeWord;
       };
 
       Closing += (_, _) => {
@@ -116,7 +117,6 @@ namespace SqlProfiler {
         _settings.SetValue("SortOrder", (int) lvEvents.SortOrder);
         _settings.SetValue("MatchCase", MatchCase);
         _settings.SetValue("WholeWord", WholeWord);
-        _settings.SetValue("WrapAround", WrapAround);
       };
 
       FormClosed += (_, _) => _session.Dispose();
@@ -442,6 +442,7 @@ namespace SqlProfiler {
       }
 
       _lexer.FillRichEdit(reTextData, sb.ToString());
+      HighlightSearchInSource();
     }
 
     /// <summary>Replaces the rows and resets everything that depends on their positions.</summary>
@@ -749,13 +750,11 @@ namespace SqlProfiler {
     #region find
 
     private void FindToolStripMenuItem_Click(object sender, EventArgs e) {
-      using var f = new FindForm(this);
-      f.TopMost = TopMost;
-      f.ShowDialog();
+      ShowQuickSearch();
     }
 
     private void FindNextToolStripMenuItem_Click(object sender, EventArgs e) {
-      PerformFind(true, WrapAround);
+      PerformFind(true, true);
     }
 
     internal void PerformFind(bool forwards, bool wrapAround) {
@@ -767,6 +766,10 @@ namespace SqlProfiler {
         return;
       }
 
+      SelectFoundRow(index);
+    }
+
+    private void SelectFoundRow(int index) {
       // the list must not jump to the newest event right after the found one is selected
       if (_session.State == ProfilingStateEnum.psProfiling && autoScrollToolStripMenuItem.Checked)
         autoScrollToolStripMenuItem.Checked = false;
