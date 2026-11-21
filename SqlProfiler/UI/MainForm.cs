@@ -56,6 +56,7 @@ namespace SqlProfiler {
 
       ThemedWindowTitle.Attach(this, mainMenu, WindowTitleStyle.ThemeColors);
       InitShortcuts();
+      InitStatusBar();
 
       _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
@@ -232,6 +233,7 @@ namespace SqlProfiler {
       tbPause.Enabled = state == ProfilingStateEnum.psProfiling;
       pauseTraceToolStripMenuItem.Enabled = tbPause.Enabled;
       timer1.Enabled = state == ProfilingStateEnum.psProfiling;
+      UpdateStatus();
       edServer.Enabled = state == ProfilingStateEnum.psStopped;
       tbAuth.Enabled = state == ProfilingStateEnum.psStopped;
       edUser.Enabled = edServer.Enabled && tbAuth.SelectedIndex == 1;
@@ -481,9 +483,12 @@ namespace SqlProfiler {
         _rateMeter.Reset();
         if (_session.State == ProfilingStateEnum.psPaused) {
           _session.Resume();
+          _traceClock.Start();
         }
         else {
           _session.Start(_traceSettings);
+          _activeServer = edServer.Text;
+          _traceClock.Restart();
           InitGridColumns();
           _eventCount = 0;
           _unfilteredRows.Clear();
@@ -530,6 +535,7 @@ namespace SqlProfiler {
           "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
       }
 
+      _traceClock.Stop();
       ApplySort();
       AppendEvents(new[] {_stoppedEvent});
       UpdateButtons();
@@ -549,6 +555,7 @@ namespace SqlProfiler {
         return;
       }
 
+      _traceClock.Stop();
       AppendEvents(new[] {_pausedEvent});
       UpdateButtons();
     }
@@ -576,6 +583,7 @@ namespace SqlProfiler {
         lvEvents.Invalidate();
       }
 
+      _slElapsed.Text = FormatElapsed(_traceClock.Elapsed);
       var rate = _rateMeter.Update(_eventCount);
       if (rate is not null)
         slEPS.Text = rate;
