@@ -115,7 +115,7 @@ namespace SqlProfiler {
         message => InvokeRequired
           ? (bool)Invoke(new Func<bool>(() => MessageBox.Show(this, message, Updater.ApplicationName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK))
           : MessageBox.Show(this, message, Updater.ApplicationName, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) == DialogResult.OK,
-        () => { exitToolStripMenuItem_Click(null, EventArgs.Empty); }
+        () => { ExitToolStripMenuItem_Click(null, EventArgs.Empty); }
       );
       
       InitializeTheme();
@@ -178,7 +178,7 @@ namespace SqlProfiler {
       }
     }
 
-    private void tbStart_Click(object sender, EventArgs e) {
+    private void TbStart_Click(object sender, EventArgs e) {
       if (!TraceProperties.AtLeastOneEventSelected(m_currentsettings)) {
         MessageBox.Show("You should select at least 1 event", "Starting trace", MessageBoxButtons.OK,
           MessageBoxIcon.Error);
@@ -226,10 +226,10 @@ namespace SqlProfiler {
         MultiSelect = true,
         AllowColumnReorder = false
       };
-      lvEvents.RetrieveVirtualItem += lvEvents_RetrieveVirtualItem;
-      lvEvents.ItemSelectionChanged += lvEvents_ItemSelectionChanged;
-      lvEvents.ColumnClick += lvEvents_ColumnClick;
-      lvEvents.SelectedIndexChanged += lvEvents_SelectedIndexChanged;
+      lvEvents.RetrieveVirtualItem += LvEvents_RetrieveVirtualItem;
+      lvEvents.ItemSelectionChanged += LvEvents_ItemSelectionChanged;
+      lvEvents.ColumnClick += LvEvents_ColumnClick;
+      lvEvents.SelectedIndexChanged += LvEvents_SelectedIndexChanged;
       lvEvents.VirtualItemsSelectionRangeChanged += LvEventsOnVirtualItemsSelectionRangeChanged;
       lvEvents.ContextMenuStrip = contextMenu;
       splitContainer1.Panel1.Controls.Add(lvEvents);
@@ -326,11 +326,11 @@ namespace SqlProfiler {
       UpdateSourceBox();
     }
 
-    void lvEvents_SelectedIndexChanged(object sender, EventArgs e) {
+    void LvEvents_SelectedIndexChanged(object sender, EventArgs e) {
       UpdateSourceBox();
     }
 
-    void lvEvents_ColumnClick(object sender, ColumnClickEventArgs e) {
+    void LvEvents_ColumnClick(object sender, ColumnClickEventArgs e) {
       lvEvents.ToggleSortOrder();
       lvEvents.SetSortIcon(e.Column, lvEvents.SortOrder);
       var comparer = new TextDataComparer(e.Column, lvEvents.SortOrder);
@@ -397,7 +397,7 @@ namespace SqlProfiler {
       if (lvi == null) return;
       lvi.Focused = true;
       lvi.Selected = true;
-      lvEvents_ItemSelectionChanged(lvEvents, null);
+      LvEvents_ItemSelectionChanged(lvEvents, null);
       if (ensure) {
         lvEvents.EnsureVisible(lvEvents.Items.IndexOf(lvi));
       }
@@ -516,7 +516,7 @@ namespace SqlProfiler {
       UpdateButtons();
     }
 
-    private void tbStop_Click(object sender, EventArgs e) {
+    private void TbStop_Click(object sender, EventArgs e) {
       StopProfiling();
     }
 
@@ -535,7 +535,7 @@ namespace SqlProfiler {
       UpdateButtons();
     }
 
-    private void lvEvents_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e) {
+    private void LvEvents_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e) {
       UpdateSourceBox();
     }
 
@@ -574,11 +574,11 @@ namespace SqlProfiler {
       }
     }
 
-    private void lvEvents_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e) {
+    private void LvEvents_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e) {
       e.Item = m_Cached[e.ItemIndex];
     }
 
-    private void tbPause_Click(object sender, EventArgs e) {
+    private void TbPause_Click(object sender, EventArgs e) {
       PauseProfiling();
     }
 
@@ -611,7 +611,7 @@ namespace SqlProfiler {
       }
     }
 
-    private void timer1_Tick(object sender, EventArgs e) {
+    private void Timer1_Tick(object sender, EventArgs e) {
       Queue<ProfilerEvent> saved;
       Exception exc;
       lock (m_eventsLock) {
@@ -661,7 +661,7 @@ namespace SqlProfiler {
       }
     }
 
-    private void tbAuth_SelectedIndexChanged(object sender, EventArgs e) {
+    private void TbAuth_SelectedIndexChanged(object sender, EventArgs e) {
       UpdateButtons();
     }
 
@@ -669,16 +669,16 @@ namespace SqlProfiler {
       lock (m_Cached) {
         m_Cached.Clear();
         lvEvents.VirtualListSize = 0;
-        lvEvents_ItemSelectionChanged(lvEvents, null);
+        LvEvents_ItemSelectionChanged(lvEvents, null);
         lvEvents.Invalidate();
       }
     }
 
-    private void tbClear_Click(object sender, EventArgs e) {
+    private void TbClear_Click(object sender, EventArgs e) {
       ClearTrace();
     }
 
-    private void copyAllToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void CopyAllToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
       CopyEventsToClipboard(false);
     }
 
@@ -696,31 +696,31 @@ namespace SqlProfiler {
         MessageBoxIcon.Information);
     }
 
-    private void copySelectedToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void CopySelectedToClipboardToolStripMenuItem_Click(object sender, EventArgs e) {
       CopyEventsToClipboard(true);
     }
 
-    private void clearTraceWindowToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void ClearTraceWindowToolStripMenuItem_Click(object sender, EventArgs e) {
       ClearTrace();
     }
 
-    private void extractAllEventsToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void ExtractAllEventsToolStripMenuItem_Click(object sender, EventArgs e) {
       CopyEventsToClipboard(false);
     }
 
-    private void extractSelectedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void ExtractSelectedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
       CopyEventsToClipboard(true);
     }
 
-    private void pauseTraceToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void PauseTraceToolStripMenuItem_Click(object sender, EventArgs e) {
       PauseProfiling();
     }
 
-    private void stopTraceToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void StopTraceToolStripMenuItem_Click(object sender, EventArgs e) {
       StopProfiling();
     }
 
-    private void findToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void FindToolStripMenuItem_Click(object sender, EventArgs e) {
       DoFind();
     }
 
@@ -737,7 +737,7 @@ namespace SqlProfiler {
       }
     }
 
-    private void selectAllToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void SelectAllToolStripMenuItem_Click(object sender, EventArgs e) {
       if (lvEvents.Focused && (m_ProfilingState != ProfilingStateEnum.psProfiling)) {
         SelectAllEvents(true);
       }
@@ -811,7 +811,7 @@ namespace SqlProfiler {
       return false;
     }
 
-    private void findNextToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void FindNextToolStripMenuItem_Click(object sender, EventArgs e) {
       if (m_ProfilingState == ProfilingStateEnum.psProfiling) {
         MessageBox.Show("You cannot find when trace is running", "SqlProfiler", MessageBoxButtons.OK,
           MessageBoxIcon.Information);
@@ -821,7 +821,7 @@ namespace SqlProfiler {
       PerformFind(true, wrapAround);
     }
 
-    private void exitToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void ExitToolStripMenuItem_Click(object sender, EventArgs e) {
       Close();
     }
 
@@ -838,11 +838,11 @@ namespace SqlProfiler {
       StartProfiling();
     }
 
-    private void tbRunWithFilters_Click(object sender, EventArgs e) {
+    private void TbRunWithFilters_Click(object sender, EventArgs e) {
       RunProfiling(true);
     }
 
-    private void copyToXlsToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void CopyToXlsToolStripMenuItem_Click(object sender, EventArgs e) {
       CopyForExcel();
     }
 
@@ -862,11 +862,11 @@ namespace SqlProfiler {
         MessageBoxIcon.Information);
     }
 
-    private void mnAbout_Click(object sender, EventArgs e) {
+    private void MnAbout_Click(object sender, EventArgs e) {
       Updater.ShowAbout();
     }
 
-    private void stayOnTop_Click(object sender, EventArgs e) {
+    private void StayOnTop_Click(object sender, EventArgs e) {
       stayOnTopToolStripMenuItem.Checked = !stayOnTopToolStripMenuItem.Checked;
       this.TopMost = stayOnTopToolStripMenuItem.Checked;
     }
@@ -880,7 +880,7 @@ namespace SqlProfiler {
       Opacity = nextOpacity;
     }
 
-    private void deleteSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void DeleteSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
       lock (m_Cached) {
         for (var i = lvEvents.SelectedIndices.Count - 1; i >= 0; i--) {
           m_Cached.RemoveAt(lvEvents.SelectedIndices[i]);
@@ -891,7 +891,7 @@ namespace SqlProfiler {
       lvEvents.SelectedIndices.Clear();
     }
 
-    private void keepSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void KeepSelectedToolStripMenuItem_Click(object sender, EventArgs e) {
       lock (m_Cached) {
         var selected = new HashSet<int>(lvEvents.SelectedIndices.Cast<int>());
         for (var i = m_Cached.Count - 1; i >= 0; i--) {
@@ -952,39 +952,39 @@ namespace SqlProfiler {
       }
     }
 
-    private void saveAllEventsToExcelXmlFileToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void SaveAllEventsToExcelXmlFileToolStripMenuItem_Click(object sender, EventArgs e) {
       SaveToExcelXmlFile();
     }
 
-    private void edServer_TextChanged(object sender, EventArgs e) {
+    private void EdServer_TextChanged(object sender, EventArgs e) {
       settings.SetValue("Server", edServer.Text);
     }
 
-    private void edUser_TextChanged(object sender, EventArgs e) {
+    private void EdUser_TextChanged(object sender, EventArgs e) {
       settings.SetValue("User", edUser.Text);
     }
 
-    private void edPassword_TextChanged(object sender, EventArgs e) {
+    private void EdPassword_TextChanged(object sender, EventArgs e) {
       settings.SetValue("Password", edPassword.Text);
     }
 
-    private void filterCapturedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void FilterCapturedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
       SetFilterEvents();
     }
 
-    private void clearCapturedFiltersToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void ClearCapturedFiltersToolStripMenuItem_Click(object sender, EventArgs e) {
       ClearFilterEvents();
     }
 
-    private void siteToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void SiteToolStripMenuItem_Click(object sender, EventArgs e) {
       Updater.VisitAppSite();
     }
 
-    private void checkForUpdatesToolStripMenuItem_Click(object sender, EventArgs e) {
+    private void CheckForUpdatesToolStripMenuItem_Click(object sender, EventArgs e) {
       Updater.CheckForUpdates(Updater.CheckUpdatesMode.AllMessages);
     }
 
-    private void tbFilterEvents_Click(object sender, EventArgs e) {
+    private void TbFilterEvents_Click(object sender, EventArgs e) {
       var filterButton = (ToolStripButton) sender;
       if (filterButton.Checked) {
         SetFilterEvents();

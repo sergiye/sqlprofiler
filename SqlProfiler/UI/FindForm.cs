@@ -32,11 +32,11 @@ namespace SqlProfiler {
       };
     }
 
-    private void btnFindNext_Click(object sender, EventArgs e) {
+    private void BtnFindNext_Click(object sender, EventArgs e) {
       DoFind(true);
     }
 
-    private void btnFindPrevious_Click(object sender, EventArgs e) {
+    private void BtnFindPrevious_Click(object sender, EventArgs e) {
       DoFind(false);
     }
 

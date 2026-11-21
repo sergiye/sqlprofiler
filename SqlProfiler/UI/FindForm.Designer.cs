@@ -64,7 +64,7 @@
       this.btnFindNext.TabIndex = 5;
       this.btnFindNext.Text = "Find &next";
       this.btnFindNext.UseVisualStyleBackColor = true;
-      this.btnFindNext.Click += new System.EventHandler(this.btnFindNext_Click);
+      this.btnFindNext.Click += new System.EventHandler(this.BtnFindNext_Click);
       // 
       // btnClose
       // 
@@ -110,7 +110,7 @@
       this.btnFindPrevious.TabIndex = 6;
       this.btnFindPrevious.Text = "Find &previous";
       this.btnFindPrevious.UseVisualStyleBackColor = true;
-      this.btnFindPrevious.Click += new System.EventHandler(this.btnFindPrevious_Click);
+      this.btnFindPrevious.Click += new System.EventHandler(this.BtnFindPrevious_Click);
       // 
       // chkWrapAround
       // 

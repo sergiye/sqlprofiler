@@ -49,7 +49,7 @@
       this.btnRun.TabIndex = 0;
       this.btnRun.Text = "Run";
       this.btnRun.UseVisualStyleBackColor = true;
-      this.btnRun.Click += new System.EventHandler(this.btnRun_Click);
+      this.btnRun.Click += new System.EventHandler(this.BtnRun_Click);
       // 
       // panel1
       // 
@@ -72,7 +72,7 @@
       this.btnReset.TabIndex = 3;
       this.btnReset.Text = "Reset";
       this.btnReset.UseVisualStyleBackColor = true;
-      this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
+      this.btnReset.Click += new System.EventHandler(this.BtnReset_Click);
       // 
       // btnCancel
       // 

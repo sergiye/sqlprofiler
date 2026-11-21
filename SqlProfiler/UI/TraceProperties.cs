@@ -373,7 +373,7 @@ namespace SqlProfiler {
       edFilters.SelectedObject = m_currentsettings.Filters;
     }
 
-    private void btnReset_Click(object sender, EventArgs e) {
+    private void BtnReset_Click(object sender, EventArgs e) {
       SetSettings(TraceSettings.GetDefaultSettings());
     }
 
@@ -392,7 +392,7 @@ namespace SqlProfiler {
              || ts.EventsColumns.SQLStmtCompleted;
     }
 
-    private void btnRun_Click(object sender, EventArgs e) {
+    private void BtnRun_Click(object sender, EventArgs e) {
       if (!AtLeastOneEventSelected(m_currentsettings)) {
         MessageBox.Show("You should select at least 1 event", "Starting trace", MessageBoxButtons.OK,
           MessageBoxIcon.Error);
