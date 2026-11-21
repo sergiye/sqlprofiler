@@ -88,9 +88,9 @@ namespace SqlProfiler {
       List.Values.CopyTo(a, 0);
       XmlSerializer x = new XmlSerializer(typeof(CEvent[]));
 
-      FileStream fs = new FileStream(filename, FileMode.Create);
-      x.Serialize(fs, a);
-      fs.Dispose();
+      using (var fs = new FileStream(filename, FileMode.Create)) {
+        x.Serialize(fs, a);
+      }
     }
 
     public void AddEvent(long eventClass, long nestLevel, long databaseID, string databaseName, long objectID,
@@ -123,27 +123,30 @@ namespace SqlProfiler {
 
     public void AppendFromFile(int cnt, string filename, bool ignorenonamesp, bool transform) {
       XmlSerializer x = new XmlSerializer(typeof(CEvent[]));
-      FileStream fs = new FileStream(filename, FileMode.Open);
-      CEvent[] a = (CEvent[]) x.Deserialize(fs);
+      CEvent[] a;
+      using (var fs = new FileStream(filename, FileMode.Open)) {
+        a = (CEvent[]) x.Deserialize(fs);
+      }
+
       YukonLexer lex = new YukonLexer();
       foreach (CEvent e in a) {
-        if (e.TextData.Contains("statman") || e.TextData.Contains("UPDATE STATISTICS")) continue;
-        if (!ignorenonamesp || e.ObjectName.Length != 0) {
+        var textData = e.TextData ?? "";
+        var objectName = e.ObjectName ?? "";
+        if (textData.Contains("statman") || textData.Contains("UPDATE STATISTICS")) continue;
+        if (!ignorenonamesp || objectName.Length != 0) {
           if (transform) {
             AddEvent(cnt, e.DatabaseID, e.DatabaseName
-              , e.ObjectName.Length == 0 ? 0 : e.ObjectID
-              , e.ObjectName.Length == 0 ? "" : e.ObjectName
-              , e.ObjectName.Length == 0 ? lex.StandardSql(e.TextData) : e.TextData, e.CPU, e.Reads, e.Writes,
+              , objectName.Length == 0 ? 0 : e.ObjectID
+              , objectName
+              , objectName.Length == 0 ? lex.StandardSql(textData) : textData, e.CPU, e.Reads, e.Writes,
               e.Duration, e.Count, e.RowCounts);
           }
           else {
-            AddEvent(cnt, e.DatabaseID, e.DatabaseName, e.ObjectID, e.ObjectName, e.TextData, e.CPU, e.Reads, e.Writes,
+            AddEvent(cnt, e.DatabaseID, e.DatabaseName, e.ObjectID, objectName, textData, e.CPU, e.Reads, e.Writes,
               e.Duration, e.Count, e.RowCounts);
           }
         }
       }
-
-      fs.Dispose();
     }
 
     public void AddEvent(int cnt, long databaseID, string databaseName, long objectID, string objectName,
