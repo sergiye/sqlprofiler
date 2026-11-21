@@ -532,7 +532,15 @@ namespace SqlProfiler {
 
     #region trace
 
+    private Exception _lastStartError;
+
     private void StartProfiling() {
+      TryStartProfiling(false, true);
+    }
+
+    /// <summary>Starts a new trace or resumes the paused one. keepEvents: the events already in the list stay there (a trace that is restarted).</summary>
+    private bool TryStartProfiling(bool keepEvents, bool showErrors) {
+      _lastStartError = null;
       try {
         Cursor = Cursors.WaitCursor;
         _rateMeter.Reset();
@@ -545,22 +553,31 @@ namespace SqlProfiler {
           _activeServer = edServer.Text;
           RememberServer(_activeServer);
           _traceClock.Restart();
-          _trimmedCount = 0;
-          InitGridColumns();
-          _eventCount = 0;
-          ResetCapturedFilter();
-          ReplaceRows(Enumerable.Empty<EventRow>());
+          if (!keepEvents) {
+            _trimmedCount = 0;
+            InitGridColumns();
+            _eventCount = 0;
+            ResetCapturedFilter();
+            ReplaceRows(Enumerable.Empty<EventRow>());
+          }
         }
 
         AppendEvents(new[] {_startedEvent});
+        return true;
       }
       catch (SqlException e) when (IsPermissionError(e)) {
-        MessageBox.Show(e.Message + "\r\n\r\nThe login needs the ALTER TRACE permission on the server (or the sysadmin role).",
-          "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        _lastStartError = e;
+        if (showErrors)
+          MessageBox.Show(e.Message + "\r\n\r\nThe login needs the ALTER TRACE permission on the server (or the sysadmin role).",
+            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return false;
       }
       catch (Exception e) {
+        _lastStartError = e;
         AppLogger.Error("Failed to start the profiling", e);
-        MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        if (showErrors)
+          MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        return false;
       }
       finally {
         UpdateButtons();
@@ -581,14 +598,16 @@ namespace SqlProfiler {
       StopProfiling();
     }
 
-    private void StopProfiling() {
+    /// <param name="quiet">Do not show the error of the server (it is only logged): the connection may be lost already.</param>
+    private void StopProfiling(bool quiet = false) {
       tbStop.Enabled = false;
       try {
         _session.Stop();
       }
       catch (Exception e) {
-        MessageBox.Show("The trace is stopped, but it could not be removed on the server:\r\n" + e.Message,
-          "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        if (!quiet)
+          MessageBox.Show("The trace is stopped, but it could not be removed on the server:\r\n" + e.Message,
+            "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
       }
 
       _traceClock.Stop();
@@ -646,11 +665,21 @@ namespace SqlProfiler {
       if (rate is not null)
         slEPS.Text = rate;
 
-      if (error is not null) {
-        StopProfiling();
-        MessageBox.Show("Reading of the trace events failed, the trace is stopped:\r\n" + error.Message +
-                        "\r\n\r\nDetails are written to " + AppLogger.FilePath,
-          "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      if (error is not null)
+        HandleReaderError(error);
+    }
+
+    /// <summary>The trace is gone (usually the connection is lost): offers to start it again with the same settings, the events stay in the list.</summary>
+    private void HandleReaderError(Exception error) {
+      StopProfiling(true);
+      var text = "Reading of the trace events failed, the trace is stopped:\r\n" + error.Message +
+                 "\r\n\r\nStart a new trace with the same settings? The events that are already in the list are kept." +
+                 "\r\n\r\nDetails are written to " + AppLogger.FilePath;
+      if (MessageBox.Show(text, "Trace stopped", MessageBoxButtons.YesNo, MessageBoxIcon.Error) != DialogResult.Yes) return;
+
+      while (!TryStartProfiling(true, false)) {
+        var retry = MessageBox.Show("Cannot start the trace:\r\n" + _lastStartError?.Message, "Start the trace again", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning);
+        if (retry != DialogResult.Retry) return;
       }
     }
 
