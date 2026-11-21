@@ -1,18 +1,30 @@
 name: Bug Report
 description: Something isn't working correctly
+title: "[Bug]: "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        > [!IMPORTANT]
-        > Before you start, check if there are already open or resolved similar issues.
-  
+        Thanks for reporting a problem!
+        For usage questions please use [Discussions](https://github.com/sergiye/sqlprofiler/discussions) instead.
+        Do not post real server names, logins or passwords in screenshots and texts.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you start
+      options:
+        - label: I have checked that there are no similar open or resolved issues.
+          required: true
+        - label: The login used for tracing has the `ALTER TRACE` permission on the server.
+          required: false
+
   - type: input
     id: version
     attributes:
       label: Version
-      description: Which App version do you use?
+      description: App version is shown in the main window title.
       placeholder: e.g. 1.0.0
     validations:
       required: true
@@ -20,56 +32,65 @@ body:
     id: os
     attributes:
       label: OS
-      description: Which operating system do you use?
       placeholder: e.g. Windows 11 21H2 build 22000
+    validations:
+      required: true
+  - type: input
+    id: sql-version
+    attributes:
+      label: SQL Server version and edition
+      description: Result of `SELECT @@VERSION`.
+      placeholder: e.g. Microsoft SQL Server 2019 (RTM) Express Edition (64-bit)
+    validations:
+      required: true
+  - type: dropdown
+    id: authentication
+    attributes:
+      label: Authentication
+      options:
+        - Windows authentication
+        - SQL Server authentication
     validations:
       required: true
   - type: textarea
     id: troubleshoot
     attributes:
       label: What is wrong?
-      description: Provide detailed description of what is wrong or does not work as expected.
-      placeholder: Provide detailed description of what is wrong or does not work as expected.
-    validations:
-      required: true
-  - type: textarea
-    id: description
-    attributes:
-      label: What did you try already?
-      description: Provide detailed description of how did you troubleshoot the issue and what have you tried already.
-      placeholder: Provide detailed description of how did you troubleshoot the issue and what have you tried already.
+      description: Describe what is wrong or does not work as expected.
+      placeholder: e.g. Events with Duration filter are not shown after the trace is resumed.
     validations:
       required: true
   - type: textarea
     id: reproduce
     attributes:
       label: How to reproduce the bug?
-      description: Describe how to reproduce the behavior. Be as specific as possible and provide as many details as possible.
+      description: Be as specific as possible.
       placeholder: |
-        1. Go to '...'
-        2. Click on '....'
-        3. Scroll down to '....'
-        4. See error
+        1. Run with filters, set 'Duration' > 100
+        2. Start the trace
+        3. Pause and resume the trace
+        4. See that no events are shown
     validations:
       required: true
   - type: textarea
-    id: expected-behaviour
+    id: expected-behavior
     attributes:
       label: What is the behavior that you expected?
-      description: Describe what did you expect would happen.
-      placeholder: Describe what did you expect would happen.
+      placeholder: e.g. Events matching the filter are still displayed.
     validations:
       required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What did you try already?
+      description: Troubleshooting steps or workarounds, if any.
   - type: textarea
     id: logs
     attributes:
-      label: Logs
-      placeholder: Please drag and drop log files here.
-      description: Please drag and drop log files here.
-    validations:
-      required: true
+      label: Error message / screenshots
+      description: Paste the error text or drag and drop screenshots here (hide private data).
   - type: textarea
     id: additional
     attributes:
       label: Additional information
-      description: If applicable, add screenshots or other relevant information to help explain your problem.
+      description: Any other relevant information.
