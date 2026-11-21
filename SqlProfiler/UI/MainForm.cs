@@ -24,6 +24,8 @@ namespace SqlProfiler {
     private readonly List<EventRow> _rows = new(1024);
     private readonly List<EventRow> _unfilteredRows = new(1024);
     private TraceProperties.TraceFilters _activeFilters;
+    private readonly QuickFilter _quickFilter = new();
+    private bool _filtering;
     private readonly ProfilerEvent _startedEvent = new();
     private readonly ProfilerEvent _stoppedEvent = new();
     private readonly ProfilerEvent _pausedEvent = new();
@@ -463,9 +465,9 @@ namespace SqlProfiler {
         _eventCount++;
         var isMarker = evt == _startedEvent || evt == _pausedEvent || evt == _stoppedEvent;
         var row = new EventRow(evt, _eventCount, GetEventCaption(evt), isMarker);
-        if (_activeFilters is not null) {
+        if (_filtering) {
           _unfilteredRows.Add(row);
-          if (!EventFilter.IsIncluded(_activeFilters, row)) continue;
+          if (!IsIncludedByFilters(row)) continue;
         }
 
         _rows.Add(row);
@@ -677,7 +679,7 @@ namespace SqlProfiler {
     }
 
     private void SetFilterEvents() {
-      if (_activeFilters is not null) return;
+      if (_filtering) return;
 
       lvEvents.SelectedIndices.Clear();
       using var frm = new TraceProperties();
@@ -691,25 +693,39 @@ namespace SqlProfiler {
       ApplyCapturedFilter(_traceSettings.Filters.Clone());
     }
 
-    /// <summary>Shows only the captured events that match the filters; the others are kept until the filter is cleared.</summary>
+    /// <summary>Whether the row passes the filter of the dialog and the quick filter. Markers (started, paused, stopped) always pass.</summary>
+    private bool IsIncludedByFilters(EventRow row) {
+      if (row.IsMarker) return true;
+      return (_activeFilters is null || EventFilter.IsIncluded(_activeFilters, row)) && _quickFilter.Matches(row.Event);
+    }
+
+    /// <summary>The filter of the dialog: only the captured events that match it are shown.</summary>
     private void ApplyCapturedFilter(TraceProperties.TraceFilters filters) {
-      if (_activeFilters is null)
-        _unfilteredRows.AddRange(_rows);
       _activeFilters = filters;
+      ApplyFilters();
+    }
+
+    /// <summary>Adds one more condition to the quick filter (the lists of the values to show and to hide).</summary>
+    private void ApplyQuickFilter(Action<QuickFilter> addCondition) {
+      addCondition(_quickFilter);
+      ApplyFilters();
+    }
+
+    /// <summary>Shows only the captured events that pass the filters; the others are kept until the filters are cleared.</summary>
+    private void ApplyFilters() {
+      if (!_filtering) {
+        _filtering = true;
+        _unfilteredRows.AddRange(_rows);
+      }
+
       tbFilterEvents.Checked = true;
-      ReplaceRows(_unfilteredRows.Where(r => EventFilter.IsIncluded(filters, r)).Take(Math.Max(filters.MaximumEventCount, 0)));
+      var max = Math.Max(_traceSettings.Filters.MaximumEventCount, 0);
+      ReplaceRows(_unfilteredRows.Where(IsIncludedByFilters).Take(max));
       ShowSelectedEvent();
     }
 
-    /// <summary>Narrows the current captured filter (or an empty one) with one more condition.</summary>
-    private void ApplyQuickFilter(Action<TraceProperties.TraceFilters> addCondition) {
-      var filters = _activeFilters?.Clone() ?? new TraceProperties.TraceFilters {MaximumEventCount = _traceSettings.Filters.MaximumEventCount};
-      addCondition(filters);
-      ApplyCapturedFilter(filters);
-    }
-
     private void ClearFilterEvents() {
-      if (_activeFilters is null) return;
+      if (!_filtering) return;
       var rows = _unfilteredRows.ToList();
       ResetCapturedFilter();
       ReplaceRows(rows);
@@ -723,9 +739,12 @@ namespace SqlProfiler {
     }
 
     private void ResetCapturedFilter() {
+      _filtering = false;
       _activeFilters = null;
+      _quickFilter.Clear();
       _unfilteredRows.Clear();
       tbFilterEvents.Checked = false;
+      UpdateEventsStatus();
     }
 
     private void FilterCapturedEventsToolStripMenuItem_Click(object sender, EventArgs e) {

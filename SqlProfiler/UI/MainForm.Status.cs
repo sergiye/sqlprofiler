@@ -9,6 +9,7 @@ namespace SqlProfiler {
     private ToolStripStatusLabel _slServer;
     private ToolStripStatusLabel _slElapsed;
     private ToolStripStatusLabel _slEvents;
+    private ToolStripStatusLabel _slFilter;
     private int _trimmedCount;
     private string _activeServer = "";
 
@@ -21,6 +22,9 @@ namespace SqlProfiler {
       statusStrip1.Items.Insert(2, _slElapsed);
       _slEvents = new ToolStripStatusLabel {AutoSize = false, Width = 420, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, ToolTipText = "Events in the list"};
       statusStrip1.Items.Insert(3, _slEvents);
+      _slFilter = new ToolStripStatusLabel {IsLink = true, LinkBehavior = LinkBehavior.HoverUnderline, Visible = false, ToolTipText = "Click to show all the events"};
+      _slFilter.Click += (_, _) => ClearFilterEvents();
+      statusStrip1.Items.Insert(4, _slFilter);
       UpdateStatus();
     }
 
@@ -42,7 +46,10 @@ namespace SqlProfiler {
       var limit = Math.Max(_traceSettings?.Filters.MaximumEventCount ?? 0, 0);
       _slEvents.Text = (_trimmedCount > 0
         ? $"{_rows.Count:#,0} shown, {_trimmedCount:#,0} oldest removed (limit {limit:#,0})"
-        : $"{_rows.Count:#,0} events") + (_activeFilters is not null ? ", filtered" : "");
+        : $"{_rows.Count:#,0} events") + (_filtering ? ", filtered" : "");
+      var description = _quickFilter.IsEmpty ? "" : _quickFilter.Describe();
+      _slFilter.Visible = _filtering && description.Length > 0;
+      _slFilter.Text = description.Length > 0 ? "Filter: " + description + " (click to clear)" : "";
       _slEvents.ToolTipText = _trimmedCount > 0
         ? "The list keeps only the latest events. Change the limit in 'Run with filters' - Maximum events count."
         : "Events in the list";

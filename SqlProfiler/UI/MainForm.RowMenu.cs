@@ -52,23 +52,23 @@ namespace SqlProfiler {
       if (!_miFilterBy.Enabled) return;
 
       var evt = row.Event;
-      AddFilterByItems("Application", evt.ApplicationName, (f, v, c) => { f.ApplicationName = v; f.ApplicationNameFilterCondition = c; });
-      AddFilterByItems("Login", evt.LoginName, (f, v, c) => { f.LoginName = v; f.LoginNameFilterCondition = c; });
-      AddFilterByItems("Database", evt.DatabaseName, (f, v, c) => { f.DatabaseName = v; f.DatabaseNameFilterCondition = c; });
-      AddFilterByItems("Host", evt.HostName, (f, v, c) => { f.HostName = v; f.HostNameFilterCondition = c; });
+      AddFilterByItems("Application", evt.ApplicationName, QuickField.Application);
+      AddFilterByItems("Login", evt.LoginName, QuickField.Login);
+      AddFilterByItems("Database", evt.DatabaseName, QuickField.Database);
+      AddFilterByItems("Host", evt.HostName, QuickField.Host);
       _miFilterBy.Enabled = _miFilterBy.DropDownItems.Count > 0;
     }
 
-    private void AddFilterByItems(string caption, string value, Action<TraceProperties.TraceFilters, string, TraceProperties.StringFilterCondition> set) {
+    private void AddFilterByItems(string caption, string value, QuickField field) {
       if (string.IsNullOrEmpty(value)) return;
       if (_miFilterBy.DropDownItems.Count > 0)
         _miFilterBy.DropDownItems.Add(new ToolStripSeparator());
 
       var shown = value.Length > 40 ? value.Substring(0, 40) + "..." : value;
       _miFilterBy.DropDownItems.Add(new ToolStripMenuItem($"Show only {caption}: {shown}", null,
-        (_, _) => ApplyQuickFilter(f => set(f, value, TraceProperties.StringFilterCondition.Like))));
+        (_, _) => ApplyQuickFilter(f => f.Include(field, value))));
       _miFilterBy.DropDownItems.Add(new ToolStripMenuItem($"Hide {caption}: {shown}", null,
-        (_, _) => ApplyQuickFilter(f => set(f, value, TraceProperties.StringFilterCondition.NotLike))));
+        (_, _) => ApplyQuickFilter(f => f.Exclude(field, value))));
     }
 
     /// <summary>The text selected in the text box, or the whole text of the row if nothing is selected there.</summary>
@@ -88,11 +88,8 @@ namespace SqlProfiler {
     private void ShowOnlyCurrentSpid() {
       var row = CurrentRow;
       if (row is null || row.IsMarker) return;
-      var spid = row.Event.SPID;
-      ApplyQuickFilter(f => {
-        f.SPID = spid;
-        f.SPIDFilterCondition = TraceProperties.IntFilterCondition.Equal;
-      });
+      var spid = row.Event.SPID.ToString();
+      ApplyQuickFilter(f => f.Include(QuickField.Spid, spid));
     }
   }
 }
