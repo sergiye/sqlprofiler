@@ -148,13 +148,18 @@ namespace SqlProfiler {
     #region themes
 
     private void OnCurrentThemeChanged() {
+      // the colors of the theme are not always readable on its background (a selection color is dark on a dark theme)
+      var back = Theme.Current.BackgroundColor;
       _lexer.DefaultColor = Theme.Current.ForegroundColor;
-      _lexer.KeywordColor = Theme.Current.SelectedBackgroundColor;
-      _lexer.GreyKeywordColor = Theme.Current.InfoColor;
-      _lexer.FunctionColor = Theme.Current.HyperlinkColor;
-      _lexer.ValueColor = Theme.Current.WarnColor;
-      _lexer.CommentColor = Theme.Current.MessageColor;
+      _lexer.KeywordColor = ColorTools.EnsureContrast(Theme.Current.SelectedBackgroundColor, back);
+      _lexer.GreyKeywordColor = ColorTools.EnsureContrast(Theme.Current.InfoColor, back);
+      _lexer.FunctionColor = ColorTools.EnsureContrast(Theme.Current.HyperlinkColor, back);
+      _lexer.ValueColor = ColorTools.EnsureContrast(Theme.Current.WarnColor, back);
+      _lexer.CommentColor = ColorTools.EnsureContrast(Theme.Current.MessageColor, back);
+      _prevSelectedIndices = null;
+      if (lvEvents is not null) UpdateSourceBox();
       lvEvents?.Invalidate();
+      _gutter?.Invalidate();
     }
 
     private void InitializeTheme() {
@@ -475,7 +480,10 @@ namespace SqlProfiler {
           sb.AppendFormat("{0}\r\ngo\r\n", FormatForDisplay(text));
       }
 
+      // a new text resets the zoom of the text box
+      var zoom = reTextData.ZoomFactor;
       _lexer.FillRichEdit(reTextData, sb.ToString());
+      if (Math.Abs(reTextData.ZoomFactor - zoom) > 0.001f) reTextData.ZoomFactor = zoom;
       HighlightSearchInSource();
     }
 

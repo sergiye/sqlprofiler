@@ -40,6 +40,7 @@ namespace SqlProfiler {
       _settings.SetValue("Top", bounds.Top);
       _settings.SetValue("Height", bounds.Height);
       _settings.SetValue("Width", bounds.Width);
+      _settings.SetValue(SourceZoomSetting, (int) Math.Round(reTextData.ZoomFactor * 100));
       _settings.SetValue("Maximized", WindowState == FormWindowState.Maximized ? 1 : 0);
       if (splitContainer1.Height > 0)
         _settings.SetValue("SplitRatio", splitContainer1.SplitterDistance * 100 / splitContainer1.Height);
