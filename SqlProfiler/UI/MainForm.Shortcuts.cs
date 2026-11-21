@@ -22,6 +22,12 @@ namespace SqlProfiler {
         case Keys.Shift | Keys.F5:
           if (tbStop.Enabled) StopProfiling();
           return true;
+        case Keys.Control | Keys.C:
+        case Keys.Control | Keys.Insert:
+          // in the list Ctrl+C copies the text of the queries; in the text box it copies the selected text as usual
+          if (!lvEvents.Focused) return base.ProcessCmdKey(ref msg, keyData);
+          CopySelectedQueries(false);
+          return true;
         default:
           return base.ProcessCmdKey(ref msg, keyData);
       }

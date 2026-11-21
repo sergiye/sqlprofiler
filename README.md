@@ -73,6 +73,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
 ### Keyboard shortcuts
  * `F5` or `Alt+S` start/resume, `Alt+P` pause, `Shift+F5` or `Alt+T` stop trace
  * `Ctrl+F` find, `F3` find next, `Ctrl+A` select all
+ * `Ctrl+C` copy the text of the selected queries (separated with `go`)
  * `Ctrl+Delete` delete selected, `Alt+Delete` keep selected, `Ctrl+Shift+Delete` clear trace window
  * `Ctrl+S` auto scroll, `Ctrl+T` stay on top
  * `Ctrl+U` check for updates, `F1` about, `Ctrl+F1` open site, `Ctrl+W` exit

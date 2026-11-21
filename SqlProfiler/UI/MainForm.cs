@@ -57,6 +57,7 @@ namespace SqlProfiler {
       ThemedWindowTitle.Attach(this, mainMenu, WindowTitleStyle.ThemeColors);
       InitShortcuts();
       InitStatusBar();
+      InitCopyText();
 
       _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
