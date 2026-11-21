@@ -108,31 +108,8 @@ namespace SqlProfiler {
             SQLStmtStarting = EventsColumns.SQLStmtStarting,
             SQLStmtCompleted = EventsColumns.SQLStmtCompleted
           },
-          Filters = new TraceFilters {
-            CPU = Filters.CPU,
-            CpuFilterCondition = Filters.CpuFilterCondition,
-            DatabaseName = Filters.DatabaseName,
-            DatabaseNameFilterCondition = Filters.DatabaseNameFilterCondition,
-            Duration = Filters.Duration,
-            DurationFilterCondition = Filters.DurationFilterCondition,
-            LoginName = Filters.LoginName,
-            HostName = Filters.HostName,
-            HostNameFilterCondition = Filters.HostNameFilterCondition,
-            LoginNameFilterCondition = Filters.LoginNameFilterCondition,
-            Reads = Filters.Reads,
-            ReadsFilterCondition = Filters.ReadsFilterCondition,
-            TextData = Filters.TextData,
-            TextDataFilterCondition = Filters.TextDataFilterCondition,
-            Writes = Filters.Writes,
-            WritesFilterCondition = Filters.WritesFilterCondition,
-            MaximumEventCount = Filters.MaximumEventCount,
-            SPID = Filters.SPID,
-            SPIDFilterCondition = Filters.SPIDFilterCondition,
-            ApplicationName = Filters.ApplicationName,
-            ApplicationNameFilterCondition = Filters.ApplicationNameFilterCondition,
-          }
-        }
-          ;
+          Filters = Filters.Clone()
+        };
       }
     }
 
@@ -345,6 +322,32 @@ namespace SqlProfiler {
       [Category(@"ApplicationName")]
       [DisplayName(@"Value")]
       public string ApplicationName { get; set; }
+
+      public TraceFilters Clone() {
+        return new TraceFilters {
+          CPU = CPU,
+          CpuFilterCondition = CpuFilterCondition,
+          DatabaseName = DatabaseName,
+          DatabaseNameFilterCondition = DatabaseNameFilterCondition,
+          Duration = Duration,
+          DurationFilterCondition = DurationFilterCondition,
+          LoginName = LoginName,
+          HostName = HostName,
+          HostNameFilterCondition = HostNameFilterCondition,
+          LoginNameFilterCondition = LoginNameFilterCondition,
+          Reads = Reads,
+          ReadsFilterCondition = ReadsFilterCondition,
+          TextData = TextData,
+          TextDataFilterCondition = TextDataFilterCondition,
+          Writes = Writes,
+          WritesFilterCondition = WritesFilterCondition,
+          MaximumEventCount = MaximumEventCount,
+          SPID = SPID,
+          SPIDFilterCondition = SPIDFilterCondition,
+          ApplicationName = ApplicationName,
+          ApplicationNameFilterCondition = ApplicationNameFilterCondition,
+        };
+      }
     }
 
     public TraceProperties() {

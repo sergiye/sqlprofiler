@@ -19,7 +19,7 @@ namespace SqlProfiler {
       statusStrip1.Items.Insert(0, _slState);
       statusStrip1.Items.Insert(1, _slServer);
       statusStrip1.Items.Insert(2, _slElapsed);
-      _slEvents = new ToolStripStatusLabel {AutoSize = false, Width = 330, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, ToolTipText = "Events in the list"};
+      _slEvents = new ToolStripStatusLabel {AutoSize = false, Width = 420, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, ToolTipText = "Events in the list"};
       statusStrip1.Items.Insert(3, _slEvents);
       UpdateStatus();
     }
@@ -40,9 +40,9 @@ namespace SqlProfiler {
     private void UpdateEventsStatus() {
       if (_slEvents is null) return;
       var limit = Math.Max(_traceSettings?.Filters.MaximumEventCount ?? 0, 0);
-      _slEvents.Text = _trimmedCount > 0
+      _slEvents.Text = (_trimmedCount > 0
         ? $"{_rows.Count:#,0} shown, {_trimmedCount:#,0} oldest removed (limit {limit:#,0})"
-        : $"{_rows.Count:#,0} events";
+        : $"{_rows.Count:#,0} events") + (_activeFilters is not null ? ", filtered" : "");
       _slEvents.ToolTipText = _trimmedCount > 0
         ? "The list keeps only the latest events. Change the limit in 'Run with filters' - Maximum events count."
         : "Events in the list";

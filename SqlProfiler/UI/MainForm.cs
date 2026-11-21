@@ -23,6 +23,7 @@ namespace SqlProfiler {
     private readonly EventRateMeter _rateMeter = new();
     private readonly List<EventRow> _rows = new(1024);
     private readonly List<EventRow> _unfilteredRows = new(1024);
+    private TraceProperties.TraceFilters _activeFilters;
     private readonly ProfilerEvent _startedEvent = new();
     private readonly ProfilerEvent _stoppedEvent = new();
     private readonly ProfilerEvent _pausedEvent = new();
@@ -58,6 +59,7 @@ namespace SqlProfiler {
       InitShortcuts();
       InitStatusBar();
       InitCopyText();
+      InitRowMenu();
 
       _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
@@ -454,7 +456,13 @@ namespace SqlProfiler {
       foreach (var evt in events) {
         _eventCount++;
         var isMarker = evt == _startedEvent || evt == _pausedEvent || evt == _stoppedEvent;
-        _rows.Add(new EventRow(evt, _eventCount, GetEventCaption(evt), isMarker));
+        var row = new EventRow(evt, _eventCount, GetEventCaption(evt), isMarker);
+        if (_activeFilters is not null) {
+          _unfilteredRows.Add(row);
+          if (!EventFilter.IsIncluded(_activeFilters, row)) continue;
+        }
+
+        _rows.Add(row);
       }
 
       TrimRows();
@@ -473,6 +481,10 @@ namespace SqlProfiler {
       if (_rows.Count <= max) return false;
       _trimmedCount += _rows.Count - max;
       _rows.RemoveRange(0, _rows.Count - max);
+      // the events hidden by the filter are kept for a while, but not without a limit
+      var maxUnfiltered = Math.Max(max, 1) * 4;
+      if (_unfilteredRows.Count > maxUnfiltered)
+        _unfilteredRows.RemoveRange(0, _unfilteredRows.Count - maxUnfiltered);
       _prevSelectedIndices = null;
       return true;
     }
@@ -496,8 +508,7 @@ namespace SqlProfiler {
           _trimmedCount = 0;
           InitGridColumns();
           _eventCount = 0;
-          _unfilteredRows.Clear();
-          tbFilterEvents.Checked = false;
+          ResetCapturedFilter();
           ReplaceRows(Enumerable.Empty<EventRow>());
         }
 
@@ -627,8 +638,7 @@ namespace SqlProfiler {
 
     private void ClearTrace() {
       _trimmedCount = 0;
-      _unfilteredRows.Clear();
-      tbFilterEvents.Checked = false;
+      ResetCapturedFilter();
       ReplaceRows(Enumerable.Empty<EventRow>());
     }
 
@@ -660,7 +670,7 @@ namespace SqlProfiler {
     }
 
     private void SetFilterEvents() {
-      if (_unfilteredRows.Count != 0) return;
+      if (_activeFilters is not null) return;
 
       lvEvents.SelectedIndices.Clear();
       using var frm = new TraceProperties();
@@ -671,17 +681,44 @@ namespace SqlProfiler {
       }
 
       _traceSettings = frm.Settings.GetCopy();
-      _unfilteredRows.AddRange(_rows);
-      var filters = _traceSettings.Filters;
+      ApplyCapturedFilter(_traceSettings.Filters.Clone());
+    }
+
+    /// <summary>Shows only the captured events that match the filters; the others are kept until the filter is cleared.</summary>
+    private void ApplyCapturedFilter(TraceProperties.TraceFilters filters) {
+      if (_activeFilters is null)
+        _unfilteredRows.AddRange(_rows);
+      _activeFilters = filters;
+      tbFilterEvents.Checked = true;
       ReplaceRows(_unfilteredRows.Where(r => EventFilter.IsIncluded(filters, r)).Take(Math.Max(filters.MaximumEventCount, 0)));
       ShowSelectedEvent();
     }
 
+    /// <summary>Narrows the current captured filter (or an empty one) with one more condition.</summary>
+    private void ApplyQuickFilter(Action<TraceProperties.TraceFilters> addCondition) {
+      var filters = _activeFilters?.Clone() ?? new TraceProperties.TraceFilters {MaximumEventCount = _traceSettings.Filters.MaximumEventCount};
+      addCondition(filters);
+      ApplyCapturedFilter(filters);
+    }
+
     private void ClearFilterEvents() {
-      if (_unfilteredRows.Count == 0) return;
-      ReplaceRows(_unfilteredRows);
-      _unfilteredRows.Clear();
+      if (_activeFilters is null) return;
+      var rows = _unfilteredRows.ToList();
+      ResetCapturedFilter();
+      ReplaceRows(rows);
+      if (TrimRows()) {
+        lvEvents.VirtualListSize = _rows.Count;
+        lvEvents.Invalidate();
+        UpdateEventsStatus();
+      }
+
       ShowSelectedEvent();
+    }
+
+    private void ResetCapturedFilter() {
+      _activeFilters = null;
+      _unfilteredRows.Clear();
+      tbFilterEvents.Checked = false;
     }
 
     private void FilterCapturedEventsToolStripMenuItem_Click(object sender, EventArgs e) {
