@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 
@@ -22,8 +23,8 @@ namespace SqlProfiler {
 
     private readonly YukonLexer m_Lex = new YukonLexer();
     private SqlConnection m_Conn;
-    private Thread m_Thr;
-    private bool m_NeedStop = true;
+    private CancellationTokenSource m_readerCts;
+    private Task m_readerTask;
     private ProfilingStateEnum m_ProfilingState;
     private int m_EventCount;
     private readonly ProfilerEvent m_EventStarted = new ProfilerEvent();
@@ -42,6 +43,7 @@ namespace SqlProfiler {
     private TraceProperties.TraceSettings m_currentsettings;
     private readonly List<PerfColumn> m_columns = new List<PerfColumn>();
     private int fixedColumnIndex = 1;
+    private const int MinFixedColumnWidth = 150;
     internal bool matchCase = false;
     internal bool wholeWord = false;
     internal bool wrapAround = false;
@@ -309,7 +311,8 @@ namespace SqlProfiler {
         otherColumnsWidth += lvEvents.Columns[i].Width;
       }
       
-      lvEvents.Columns[fixedColumnIndex].Width = lvEvents.Width - otherColumnsWidth - SystemInformation.VerticalScrollBarWidth;
+      var width = lvEvents.Width - otherColumnsWidth - SystemInformation.VerticalScrollBarWidth;
+      lvEvents.Columns[fixedColumnIndex].Width = Math.Max(width, MinFixedColumnWidth);
     }
 
     private void LvEvents_ColumnWidthChanged(object sender, ColumnWidthChangedEventArgs e) {
@@ -400,9 +403,9 @@ namespace SqlProfiler {
       }
     }
 
-    private void ProfilerThread(object state) {
+    private void ReadEvents(CancellationToken token) {
       try {
-        while (!m_NeedStop && m_Rdr.TraceIsActive) {
+        while (!token.IsCancellationRequested && m_Rdr.TraceIsActive) {
           var evt = m_Rdr.Next();
           if (evt != null) {
             lock (m_eventsLock) {
@@ -413,7 +416,7 @@ namespace SqlProfiler {
       }
       catch (Exception e) {
         lock (m_eventsLock) {
-          if (!m_NeedStop && m_Rdr.TraceIsActive) {
+          if (!token.IsCancellationRequested && m_Rdr.TraceIsActive) {
             m_profilerexception = e;
           }
         }
@@ -424,7 +427,8 @@ namespace SqlProfiler {
       var builder = new SqlConnectionStringBuilder {
         DataSource = edServer.Text,
         InitialCatalog = "master",
-        ApplicationName = "SqlProfiler"
+        ApplicationName = "SqlProfiler",
+        ConnectTimeout = 15
       };
       if (tbAuth.SelectedIndex == 0) {
         builder.IntegratedSecurity = true;
@@ -465,6 +469,10 @@ namespace SqlProfiler {
         lvEvents.VirtualListSize = 0;
         StartProfilerThread();
       }
+      catch (SqlException e) when (IsPermissionError(e)) {
+        MessageBox.Show(e.Message + "\r\n\r\nThe login needs the ALTER TRACE permission on the server (or the sysadmin role).",
+          "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      }
       catch (Exception e) {
         MessageBox.Show(e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
@@ -474,16 +482,33 @@ namespace SqlProfiler {
       }
     }
 
-    private void StartProfilerThread() {
-      m_NeedStop = true;
+    private static bool IsPermissionError(SqlException e) {
+      foreach (SqlError error in e.Errors) {
+        // 229: permission denied, 8189: no permission to run the trace procedure, 15247: no permission to perform the action
+        if (error.Number == 229 || error.Number == 8189 || error.Number == 15247) return true;
+      }
+
+      return false;
+    }
+
+    private void StopReaderTask() {
+      m_readerCts?.Cancel();
       m_Rdr.Close();
-      m_Thr?.Join(2000);
+      // the task ends when the closed reader stops its blocking read; a stuck read must not freeze the window
+      m_readerTask?.Wait(3000);
+      m_readerTask = null;
+      m_readerCts?.Dispose();
+      m_readerCts = null;
+    }
+
+    private void StartProfilerThread() {
+      StopReaderTask();
       m_Rdr.StartTrace();
-      m_Thr = new Thread(ProfilerThread) {IsBackground = true, Priority = ThreadPriority.Lowest};
-      m_NeedStop = false;
+      m_readerCts = new CancellationTokenSource();
+      var token = m_readerCts.Token;
       m_ProfilingState = ProfilingStateEnum.psProfiling;
       NewEventArrived(m_EventStarted, true);
-      m_Thr.Start();
+      m_readerTask = Task.Factory.StartNew(() => ReadEvents(token), token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
     }
 
     private void ResumeProfiling() {
@@ -504,13 +529,7 @@ namespace SqlProfiler {
         cn.Close();
       }
 
-      m_NeedStop = true;
-      m_Rdr.Close();
-      if (m_Thr != null && !m_Thr.Join(3000)) {
-        m_Thr.Abort();
-        m_Thr.Join();
-      }
-
+      StopReaderTask();
       m_ProfilingState = ProfilingStateEnum.psStopped;
       NewEventArrived(m_EventStopped, true);
       UpdateButtons();
@@ -614,10 +633,7 @@ namespace SqlProfiler {
         }
 
         if (m_Cached.Count > m_currentsettings.Filters.MaximumEventCount) {
-          while (m_Cached.Count > m_currentsettings.Filters.MaximumEventCount) {
-            m_Cached.RemoveAt(0);
-          }
-
+          m_Cached.RemoveRange(0, m_Cached.Count - Math.Max(m_currentsettings.Filters.MaximumEventCount, 0));
           lvEvents.VirtualListSize = m_Cached.Count;
           lvEvents.Invalidate();
         }
