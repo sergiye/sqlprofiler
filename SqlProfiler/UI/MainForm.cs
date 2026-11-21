@@ -63,7 +63,7 @@ namespace SqlProfiler {
       InitSourcePanel();
       InitQuickSearch();
 
-      _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
+      _traceSettings = LoadTraceSettings();
       ParseCommandLine();
       InitLV();
       RestoreSortState();
@@ -96,10 +96,7 @@ namespace SqlProfiler {
       MinimumSize = new Size(1100, 666);
 
       Load += (_, _) => {
-        Left = _settings.GetValue("Left", Screen.PrimaryScreen.WorkingArea.Left + Width / 2);
-        Top = _settings.GetValue("Top", Screen.PrimaryScreen.WorkingArea.Top + Height / 2);
-        Height = _settings.GetValue("Height", Screen.PrimaryScreen.WorkingArea.Height / 2);
-        Width = _settings.GetValue("Width", Screen.PrimaryScreen.WorkingArea.Width / 2);
+        RestoreLayout();
 
         MatchCase = _settings.GetValue("MatchCase", false);
         WholeWord = _settings.GetValue("WholeWord", false);
@@ -108,10 +105,9 @@ namespace SqlProfiler {
       };
 
       Closing += (_, _) => {
-        _settings.SetValue("Left", Left);
-        _settings.SetValue("Top", Top);
-        _settings.SetValue("Height", Height);
-        _settings.SetValue("Width", Width);
+        SaveLayout();
+        SaveColumnWidths();
+        SaveTraceSettings();
 
         _settings.SetValue("SortColumn", lvEvents.SortColumn);
         _settings.SetValue("SortOrder", (int) lvEvents.SortOrder);
@@ -277,6 +273,7 @@ namespace SqlProfiler {
 
     private void InitGridColumns() {
       _columns = GridColumns.Build(_traceSettings.EventsColumns);
+      RestoreColumnWidths(_columns);
       lvEvents.BeginUpdate();
       lvEvents.SizeChanged -= LvEvents_SizeChanged;
       lvEvents.ColumnWidthChanged -= LvEvents_ColumnWidthChanged;

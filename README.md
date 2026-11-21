@@ -67,7 +67,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
  * `Auto`/`Light`/`Dark` themes integrated into executable, `Auto` follows the system theme
  * Custom themes from external files (see below)
  * Stay on top (`Ctrl+T`), window opacity is changed with the mouse wheel over the window
- * Window position, size, connection settings, search options and selected theme are remembered
+ * Window position, size and state, the splitter, the widths of the columns, the selected events, columns and filters of the trace, the sorting, connection settings, search options and the selected theme are remembered
  * Settings can be stored in a file next to the executable (portable mode) or in the user profile
  * Built-in update check (`Ctrl+U`)
  * Errors are logged to `SqlProfiler.log` next to the executable (Help - Open log file), nothing is written elsewhere
