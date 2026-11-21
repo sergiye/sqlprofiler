@@ -18,35 +18,21 @@ namespace SqlProfiler {
     }
 
     public static StringFilterCondition ParseStringCondition(string value) {
-      switch (value.ToLower()) {
-        case "like":
-        case "eq":
-        case "=": return StringFilterCondition.Like;
-        case "notlike": return StringFilterCondition.NotLike;
-      }
-
-      throw new Exception("Unknown filter condition:" + value);
+      return value.ToLowerInvariant() switch {
+        "like" or "eq" or "=" => StringFilterCondition.Like,
+        "notlike" => StringFilterCondition.NotLike,
+        _ => throw new ArgumentException("Unknown filter condition: " + value)
+      };
     }
 
     public static IntFilterCondition ParseIntCondition(string value) {
-      switch (value.ToLower()) {
-        case "equal":
-        case "eq":
-        case "=":
-          return IntFilterCondition.Equal;
-        case "notequal":
-        case "ne":
-        case "!=":
-        case "<>": return IntFilterCondition.NotEqual;
-        case "greaterthan":
-        case "ge":
-        case ">": return IntFilterCondition.GreaterThan;
-        case "lessthan":
-        case "le":
-        case "<": return IntFilterCondition.LessThan;
-      }
-
-      throw new Exception("Unknown filter condition:" + value);
+      return value.ToLowerInvariant() switch {
+        "equal" or "eq" or "=" => IntFilterCondition.Equal,
+        "notequal" or "ne" or "!=" or "<>" => IntFilterCondition.NotEqual,
+        "greaterthan" or "ge" or ">" => IntFilterCondition.GreaterThan,
+        "lessthan" or "le" or "<" => IntFilterCondition.LessThan,
+        _ => throw new ArgumentException("Unknown filter condition: " + value)
+      };
     }
     /*
      declare @xml xml

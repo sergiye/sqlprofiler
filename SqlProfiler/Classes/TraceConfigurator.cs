@@ -115,14 +115,13 @@ namespace SqlProfiler {
 
     private static void SetIntFilter(RawTraceReader reader, long? value, TraceProperties.IntFilterCondition condition, int column) {
       if (value == null) return;
-      int op;
-      switch (condition) {
-        case TraceProperties.IntFilterCondition.Equal: op = ComparisonOperators.Equal; break;
-        case TraceProperties.IntFilterCondition.NotEqual: op = ComparisonOperators.NotEqual; break;
-        case TraceProperties.IntFilterCondition.GreaterThan: op = ComparisonOperators.GreaterThan; break;
-        case TraceProperties.IntFilterCondition.LessThan: op = ComparisonOperators.LessThan; break;
-        default: throw new ArgumentOutOfRangeException(nameof(condition));
-      }
+      var op = condition switch {
+        TraceProperties.IntFilterCondition.Equal => ComparisonOperators.Equal,
+        TraceProperties.IntFilterCondition.NotEqual => ComparisonOperators.NotEqual,
+        TraceProperties.IntFilterCondition.GreaterThan => ComparisonOperators.GreaterThan,
+        TraceProperties.IntFilterCondition.LessThan => ComparisonOperators.LessThan,
+        _ => throw new ArgumentOutOfRangeException(nameof(condition))
+      };
 
       reader.SetFilter(column, LogicalOperators.AND, op, value);
     }

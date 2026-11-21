@@ -18,13 +18,12 @@ namespace SqlProfiler {
         root.AppendChild(CreateEventRow(doc, evt));
       doc.AppendChild(root);
       doc.PreserveWhitespace = true;
-      using (var writer = new StringWriter()) {
-        using (var textWriter = new XmlTextWriter(writer) {Formatting = Formatting.Indented}) {
-          doc.Save(textWriter);
-        }
-
-        return writer.ToString();
+      using var writer = new StringWriter();
+      using (var textWriter = new XmlTextWriter(writer) {Formatting = Formatting.Indented}) {
+        doc.Save(textWriter);
       }
+
+      return writer.ToString();
     }
 
     private static XmlNode CreateEventRow(XmlDocument doc, ProfilerEvent evt) {
@@ -110,13 +109,12 @@ namespace SqlProfiler {
 
     /// <summary>UTF-8 bytes without BOM, so that the declared encoding matches the real one.</summary>
     public static byte[] GetXmlBytes(XmlDocument doc) {
-      using (var ms = new MemoryStream()) {
-        using (var textWriter = new XmlTextWriter(ms, new UTF8Encoding(false)) {Formatting = Formatting.Indented, Namespaces = true}) {
-          doc.Save(textWriter);
-        }
-
-        return ms.ToArray();
+      using var ms = new MemoryStream();
+      using (var textWriter = new XmlTextWriter(ms, new UTF8Encoding(false)) {Formatting = Formatting.Indented, Namespaces = true}) {
+        doc.Save(textWriter);
       }
+
+      return ms.ToArray();
     }
 
     private static XmlElement CreateElement(XmlDocument doc, string name) {

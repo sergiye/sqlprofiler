@@ -19,7 +19,7 @@ namespace SqlProfiler {
   public partial class MainForm : Form {
     
     private RawTraceReader m_Rdr;
-    private readonly object m_eventsLock = new object();
+    private readonly object m_eventsLock = new();
 
     private readonly YukonLexer m_Lex = new YukonLexer();
     private SqlConnection m_Conn;
@@ -27,26 +27,26 @@ namespace SqlProfiler {
     private Task m_readerTask;
     private ProfilingStateEnum m_ProfilingState;
     private int m_EventCount;
-    private readonly ProfilerEvent m_EventStarted = new ProfilerEvent();
-    private readonly ProfilerEvent m_EventStopped = new ProfilerEvent();
-    private readonly ProfilerEvent m_EventPaused = new ProfilerEvent();
-    private readonly List<ListViewItem> m_Cached = new List<ListViewItem>(1024);
-    private readonly List<ListViewItem> m_CachedUnFiltered = new List<ListViewItem>(1024);
+    private readonly ProfilerEvent m_EventStarted = new();
+    private readonly ProfilerEvent m_EventStopped = new();
+    private readonly ProfilerEvent m_EventPaused = new();
+    private readonly List<ListViewItem> m_Cached = new(1024);
+    private readonly List<ListViewItem> m_CachedUnFiltered = new(1024);
     internal string lastpattern = "";
     private ListViewNF lvEvents;
-    Queue<ProfilerEvent> m_events = new Queue<ProfilerEvent>(10);
+    Queue<ProfilerEvent> m_events = new(10);
     private bool m_autostart;
     private bool dontUpdateSource;
     private Exception m_profilerexception;
-    private readonly Queue<PerfInfo> m_perf = new Queue<PerfInfo>();
+    private readonly Queue<PerfInfo> m_perf = new();
     private PerfInfo m_first, m_prev;
     private TraceProperties.TraceSettings m_currentsettings;
-    private readonly List<PerfColumn> m_columns = new List<PerfColumn>();
+    private readonly List<PerfColumn> m_columns = new();
     private int fixedColumnIndex = 1;
     private const int MinFixedColumnWidth = 150;
-    internal bool matchCase = false;
-    internal bool wholeWord = false;
-    internal bool wrapAround = false;
+    internal bool matchCase;
+    internal bool wholeWord;
+    internal bool wrapAround;
     private readonly PersistentSettings settings;
 
     public MainForm() {
@@ -526,7 +526,6 @@ namespace SqlProfiler {
         cn.Open();
         m_Rdr.StopTrace(cn);
         m_Rdr.CloseTrace(cn);
-        cn.Close();
       }
 
       StopReaderTask();
@@ -586,7 +585,6 @@ namespace SqlProfiler {
       using (var cn = GetConnection()) {
         cn.Open();
         m_Rdr.StopTrace(cn);
-        cn.Close();
       }
 
       m_ProfilingState = ProfilingStateEnum.psPaused;
@@ -622,9 +620,8 @@ namespace SqlProfiler {
       }
 
       if (null != exc) {
-        using (var dlg = new ThreadExceptionDialog(exc)) {
-          dlg.ShowDialog();
-        }
+        using var dlg = new ThreadExceptionDialog(exc);
+        dlg.ShowDialog();
       }
 
       lock (m_Cached) {
