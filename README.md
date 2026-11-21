@@ -71,7 +71,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
  * Errors are logged to `SqlProfiler.log` next to the executable (Help - Open log file), nothing is written elsewhere
 
 ### Keyboard shortcuts
- * `Alt+S` start, `Alt+P` pause, `Alt+T` stop trace
+ * `F5` or `Alt+S` start/resume, `Alt+P` pause, `Shift+F5` or `Alt+T` stop trace
  * `Ctrl+F` find, `F3` find next, `Ctrl+A` select all
  * `Ctrl+Delete` delete selected, `Alt+Delete` keep selected, `Ctrl+Shift+Delete` clear trace window
  * `Ctrl+S` auto scroll, `Ctrl+T` stay on top

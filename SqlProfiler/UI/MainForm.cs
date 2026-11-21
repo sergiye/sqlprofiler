@@ -54,6 +54,7 @@ namespace SqlProfiler {
       edPassword.TextBox.PasswordChar = '*';
 
       ThemedWindowTitle.Attach(this, mainMenu, WindowTitleStyle.ThemeColors);
+      InitShortcuts();
 
       _traceSettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
