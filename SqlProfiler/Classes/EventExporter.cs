@@ -124,7 +124,7 @@ namespace SqlProfiler {
     private static void AddCell(XmlNode row, string type, string text, string styleId = null) {
       var doc = row.OwnerDocument;
       var cell = CreateElement(doc, "Cell");
-      if (styleId != null) AddSpreadsheetAttribute(cell, "StyleID", styleId);
+      if (styleId is not null) AddSpreadsheetAttribute(cell, "StyleID", styleId);
       var data = CreateElement(doc, "Data");
       AddSpreadsheetAttribute(data, "Type", type);
       data.InnerText = text;

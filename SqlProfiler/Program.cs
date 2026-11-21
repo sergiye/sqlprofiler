@@ -11,7 +11,7 @@ namespace SqlProfiler {
 
       if (!OSHelper.IsCompatible(true, out var errorMessage, out var fixAction)) {
 
-        if (fixAction != null) {
+        if (fixAction is not null) {
           if (MessageBox.Show(errorMessage, Updater.ApplicationName, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes) {
             fixAction?.Invoke();
           }

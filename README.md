@@ -29,6 +29,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
 ### Tracing
  * Server-side trace created via `sp_trace_create`/`sp_trace_setevent`, events are streamed to the app with `sp_trace_getdata`
  * Windows or SQL Server authentication
+ * `Encrypt connection` and `Trust server certificate` options in the File menu (the certificate is trusted by default)
  * Start, pause/resume and stop a running trace
  * "Run with filters" opens the trace properties dialog before the start
  * Selectable events:

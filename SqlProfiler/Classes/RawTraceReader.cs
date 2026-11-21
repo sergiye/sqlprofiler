@@ -923,17 +923,17 @@ order by Type_Name,trace_column_id
 
     private int GetInt(int idx) {
       if (!ColumnIsSet(idx)) return 0;
-      return m_Events[idx] == null ? 0 : (int) m_Events[idx];
+      return m_Events[idx] is null ? 0 : (int) m_Events[idx];
     }
 
     private long GetLong(int idx) {
       if (!ColumnIsSet(idx)) return 0;
-      return m_Events[idx] == null ? 0 : (long) m_Events[idx];
+      return m_Events[idx] is null ? 0 : (long) m_Events[idx];
     }
 
     private string GetString(int idx) {
       if (!ColumnIsSet(idx)) return "";
-      return m_Events[idx] == null ? "" : (string) m_Events[idx];
+      return m_Events[idx] is null ? "" : (string) m_Events[idx];
     }
 
     private byte[] GetByte(int idx) {
@@ -1320,7 +1320,7 @@ order by trace_column_id
       cmd.Parameters.Add("@columnid", SqlDbType.Int).Value = columnId;
       cmd.Parameters.Add("@logical_operator", SqlDbType.Int).Value = logicalOperator;
       cmd.Parameters.Add("@comparison_operator", SqlDbType.Int).Value = comparisonOperator;
-      if (value == null) {
+      if (value is null) {
         cmd.Parameters.Add("@value", SqlDbType.Int).Value = DBNull.Value;
       }
       else {
@@ -1381,7 +1381,7 @@ order by trace_column_id
       cmd.Parameters.Add("@columnid", SqlDbType.Int).Value = columnId;
       cmd.Parameters.Add("@logical_operator", SqlDbType.Int).Value = logicalOperator;
       cmd.Parameters.Add("@comparison_operator", SqlDbType.Int).Value = comparisonOperator;
-      if (value == null) {
+      if (value is null) {
         cmd.Parameters.Add("@value", SqlDbType.NVarChar).Value = DBNull.Value;
       }
       else {

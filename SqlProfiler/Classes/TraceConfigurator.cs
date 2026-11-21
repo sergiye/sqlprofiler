@@ -97,7 +97,7 @@ namespace SqlProfiler {
         reader.SetEvent(e.Key, e.Value);
 
       var filters = settings.Filters;
-      if (filters.Duration != null)
+      if (filters.Duration is not null)
         SetIntFilter(reader, filters.Duration * 1000L, filters.DurationFilterCondition, ProfilerEventColumns.Duration);
       SetIntFilter(reader, filters.Reads, filters.ReadsFilterCondition, ProfilerEventColumns.Reads);
       SetIntFilter(reader, filters.Writes, filters.WritesFilterCondition, ProfilerEventColumns.Writes);
@@ -114,7 +114,7 @@ namespace SqlProfiler {
     }
 
     private static void SetIntFilter(RawTraceReader reader, long? value, TraceProperties.IntFilterCondition condition, int column) {
-      if (value == null) return;
+      if (value is null) return;
       var op = condition switch {
         TraceProperties.IntFilterCondition.Equal => ComparisonOperators.Equal,
         TraceProperties.IntFilterCondition.NotEqual => ComparisonOperators.NotEqual,

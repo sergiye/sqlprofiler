@@ -48,6 +48,8 @@ namespace SqlProfiler {
     internal bool wholeWord;
     internal bool wrapAround;
     private readonly PersistentSettings settings;
+    private UserOption m_encrypt;
+    private UserOption m_trustCertificate;
 
     public MainForm() {
       settings = new PersistentSettings();
@@ -73,6 +75,14 @@ namespace SqlProfiler {
       };
 
       var autoScroll = new UserOption("autoScroll", true, autoScrollToolStripMenuItem, settings);
+
+      var encryptItem = new ToolStripMenuItem("Encrypt connection");
+      var trustCertificateItem = new ToolStripMenuItem("Trust server certificate");
+      var insertAt = fileToolStripMenuItem.DropDownItems.IndexOf(storeSettingsInFileToolStripMenuItem) + 1;
+      fileToolStripMenuItem.DropDownItems.Insert(insertAt, encryptItem);
+      fileToolStripMenuItem.DropDownItems.Insert(insertAt + 1, trustCertificateItem);
+      m_encrypt = new UserOption("encrypt", false, encryptItem, settings);
+      m_trustCertificate = new UserOption("trustServerCertificate", true, trustCertificateItem, settings);
 
       edServer.Text = settings.GetValue("Server", ".");
       edUser.Text = settings.GetValue("User", "sa");
@@ -138,7 +148,7 @@ namespace SqlProfiler {
 
     private void InitializeTheme() {
       var currentItem = CustomTheme.FillThemesMenu<ToolStripRadioButtonMenuItem>((title, theme, onClick) => {
-        if (theme == null && onClick == null) {
+        if (theme is null && onClick is null) {
           themeMenuItem.DropDownItems.Add(new ToolStripSeparator());
           return null;
         }
@@ -146,7 +156,7 @@ namespace SqlProfiler {
         themeMenuItem.DropDownItems.Add(item);
         return item;
       }, null, ThemeSupport.CurrentId, "SqlProfiler.themes");
-      if (currentItem != null)
+      if (currentItem is not null)
         currentItem.Checked = true;
 
       OnCurrentThemeChanged();
@@ -394,7 +404,7 @@ namespace SqlProfiler {
     }
 
     internal void FocusLVI(ListViewItem lvi, bool ensure) {
-      if (lvi == null) return;
+      if (lvi is null) return;
       lvi.Focused = true;
       lvi.Selected = true;
       LvEvents_ItemSelectionChanged(lvEvents, null);
@@ -407,7 +417,7 @@ namespace SqlProfiler {
       try {
         while (!token.IsCancellationRequested && m_Rdr.TraceIsActive) {
           var evt = m_Rdr.Next();
-          if (evt != null) {
+          if (evt is not null) {
             lock (m_eventsLock) {
               m_events.Enqueue(evt);
             }
@@ -428,7 +438,9 @@ namespace SqlProfiler {
         DataSource = edServer.Text,
         InitialCatalog = "master",
         ApplicationName = "SqlProfiler",
-        ConnectTimeout = 15
+        ConnectTimeout = 15,
+        Encrypt = m_encrypt.Value,
+        TrustServerCertificate = m_trustCertificate.Value
       };
       if (tbAuth.SelectedIndex == 0) {
         builder.IntegratedSecurity = true;
@@ -452,7 +464,7 @@ namespace SqlProfiler {
           return;
         }
 
-        if (m_Conn != null && m_Conn.State == ConnectionState.Open) {
+        if (m_Conn is not null && m_Conn.State == ConnectionState.Open) {
           m_Conn.Close();
         }
 
@@ -546,7 +558,7 @@ namespace SqlProfiler {
 
       int[] selectedIndices = new int[lvEvents.SelectedIndices.Count];
       lvEvents.SelectedIndices.CopyTo(selectedIndices, 0);
-      if (prevSelectedIndices != null && Enumerable.SequenceEqual(selectedIndices, prevSelectedIndices))
+      if (prevSelectedIndices is not null && Enumerable.SequenceEqual(selectedIndices, prevSelectedIndices))
         return;
       prevSelectedIndices = selectedIndices;
 
@@ -619,7 +631,7 @@ namespace SqlProfiler {
         m_profilerexception = null;
       }
 
-      if (null != exc) {
+      if (exc is not null) {
         using var dlg = new ThreadExceptionDialog(exc);
         dlg.ShowDialog();
       }
@@ -635,14 +647,14 @@ namespace SqlProfiler {
           lvEvents.Invalidate();
         }
 
-        if ((null == m_prev) || (DateTime.Now.Subtract(m_prev.m_date).TotalSeconds >= 1)) {
+        if (m_prev is null || (DateTime.Now.Subtract(m_prev.m_date).TotalSeconds >= 1)) {
           var curr = new PerfInfo {m_count = m_EventCount};
           if (m_perf.Count >= 60) {
             m_first = m_perf.Dequeue();
           }
 
-          if (null == m_first) m_first = curr;
-          if (null == m_prev) m_prev = curr;
+          m_first ??= curr;
+          m_prev ??= curr;
 
           var now = DateTime.Now;
           var d1 = now.Subtract(m_prev.m_date).TotalSeconds;

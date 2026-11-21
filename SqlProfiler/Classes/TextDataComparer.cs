@@ -21,9 +21,9 @@ namespace SqlProfiler {
     }
 
     private int CompareAscending(ListViewItem x, ListViewItem y) {
-      if (x.SubItems[CheckedColumn] == null && y.SubItems[CheckedColumn] == null) return 0;
-      else if (x.SubItems[CheckedColumn] == null) return -1;
-      else if (y.SubItems[CheckedColumn] == null) return 1;
+      if (x.SubItems[CheckedColumn] is null && y.SubItems[CheckedColumn] is null) return 0;
+      else if (x.SubItems[CheckedColumn] is null) return -1;
+      else if (y.SubItems[CheckedColumn] is null) return 1;
       else {
         int xAsInt;
         bool xIsInt = Int32.TryParse(x.SubItems[CheckedColumn].Text.Replace(",", ""), out xAsInt);
@@ -44,9 +44,9 @@ namespace SqlProfiler {
     }
 
     private int CompareDescending(ListViewItem x, ListViewItem y) {
-      if (x.SubItems[CheckedColumn] == null && y.SubItems[CheckedColumn] == null) return 0;
-      else if (x.SubItems[CheckedColumn] == null) return 1;
-      else if (y.SubItems[CheckedColumn] == null) return -1;
+      if (x.SubItems[CheckedColumn] is null && y.SubItems[CheckedColumn] is null) return 0;
+      else if (x.SubItems[CheckedColumn] is null) return 1;
+      else if (y.SubItems[CheckedColumn] is null) return -1;
       else {
         int xAsInt;
         bool xIsInt = Int32.TryParse(x.SubItems[CheckedColumn].Text.Replace(",", ""), out xAsInt);
