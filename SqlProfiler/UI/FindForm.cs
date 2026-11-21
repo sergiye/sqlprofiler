@@ -19,7 +19,7 @@ namespace SqlProfiler {
       cbxMatchCase.Checked = mainForm.matchCase;
       cbxWholeWord.Checked = mainForm.wholeWord;
       cbxWrapAround.Checked = mainForm.wrapAround;
-      Theme.Current.Apply(this);
+      ThemeSupport.Attach(this);
 
       Shown += (s, e) => {
         edPattern.Focus();

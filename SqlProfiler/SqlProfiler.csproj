@@ -58,7 +58,6 @@
     <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\PersistentSettings.cs" Link="Common\PersistentSettings.cs" />
     <Compile Include="$(CommonSourcesDir)sergiye.Common\Tools\Crasher.cs" Link="Common\Crasher.cs" />
     <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\UserOption.cs" Link="Common\UserOption.cs" />
-    <Compile Include="$(CommonSourcesDir)sergiye.Common.UI\Themes\ThemedToolStripRenderer.cs" Link="Common\Themes\ThemedToolStripRenderer.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(UseLocalCommon)' != 'true'">
     <PackageReference Include="SergiyE.Common" Version="1.*" />

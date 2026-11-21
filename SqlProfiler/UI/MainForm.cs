@@ -50,6 +50,10 @@ namespace SqlProfiler {
     private readonly PersistentSettings settings;
 
     public MainForm() {
+      settings = new PersistentSettings();
+      settings.Load();
+      ThemeSupport.Initialize(settings.GetValue("Theme", ""), id => settings.SetValue("Theme", id), "SqlProfiler.themes");
+
       InitializeComponent();
       tbStart.DefaultItem = tbRun;
       Icon = Icon.ExtractAssociatedIcon(Updater.CurrentFileLocation);
@@ -57,8 +61,7 @@ namespace SqlProfiler {
       StartPosition = FormStartPosition.CenterScreen;
       edPassword.TextBox.PasswordChar = '*';
 
-      settings = new PersistentSettings();
-      settings.Load();
+      ThemedWindowTitle.Attach(this, mainMenu, WindowTitleStyle.ThemeColors);
 
       m_currentsettings = TraceProperties.TraceSettings.GetDefaultSettings();
       ParseCommandLine();
@@ -131,26 +134,29 @@ namespace SqlProfiler {
       m_Lex.FunctionColor = Theme.Current.HyperlinkColor;
       m_Lex.ValueColor = Theme.Current.WarnColor;
       m_Lex.CommentColor = Theme.Current.MessageColor;
-      settings.SetValue("Theme", Theme.IsAutoThemeEnabled ? "auto" : Theme.Current.Id);
     }
 
     private void InitializeTheme() {
-
-      mainMenu.Renderer = new ThemedToolStripRenderer();
-      toolStrip1.Renderer = new ThemedToolStripRenderer();
-      contextMenu.Renderer = new ThemedToolStripRenderer();
-
-      var currentItem = CustomTheme.FillThemesMenu((title, theme, onClick) => {
+      var currentItem = CustomTheme.FillThemesMenu<ToolStripRadioButtonMenuItem>((title, theme, onClick) => {
         if (theme == null && onClick == null) {
-          themeMenuItem.DropDownItems.Add(title);
+          themeMenuItem.DropDownItems.Add(new ToolStripSeparator());
           return null;
         }
         var item = new ToolStripRadioButtonMenuItem(title, null, onClick);
         themeMenuItem.DropDownItems.Add(item);
         return item;
-      }, OnCurrentThemeChanged, settings.GetValue("Theme", ""), "SqlProfiler.themes");
-      currentItem?.PerformClick();
-      Theme.Current.Apply(this);
+      }, null, ThemeSupport.CurrentId, "SqlProfiler.themes");
+      if (currentItem != null)
+        currentItem.Checked = true;
+
+      OnCurrentThemeChanged();
+      ThemeSupport.Changed += OnCurrentThemeChanged;
+      Closing += (_, _) => ThemeSupport.Changed -= OnCurrentThemeChanged;
+    }
+
+    protected override void OnHandleCreated(EventArgs e) {
+      base.OnHandleCreated(e);
+      ThemeSupport.Apply(this);
     }
 
     #endregion

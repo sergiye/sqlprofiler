@@ -374,7 +374,7 @@ namespace SqlProfiler {
     public TraceProperties() {
       InitializeComponent();
       tabControl1.Tag = Theme.SkipThemeTag;
-      Theme.Current.Apply(this);
+      ThemeSupport.Attach(this);
     }
 
     public void SetSettings(TraceSettings st) {
