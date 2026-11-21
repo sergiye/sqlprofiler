@@ -128,7 +128,7 @@ namespace SqlProfiler {
             EndTime = EventsColumns.EndTime,
             ObjectName = EventsColumns.ObjectName,
             StartTime = EventsColumns.StartTime,
-            BlockedProcessPeport = EventsColumns.BlockedProcessPeport,
+            BlockedProcessReport = EventsColumns.BlockedProcessReport,
             SQLStmtStarting = EventsColumns.SQLStmtStarting,
             SQLStmtCompleted = EventsColumns.SQLStmtCompleted
           },
@@ -228,7 +228,7 @@ namespace SqlProfiler {
       [Description(
         @"The Blocked Process Report event class indicates that a task has been blocked for more than a specified amount of time. This event class does not include system tasks or tasks that are waiting on non deadlock-detectable resources.")]
       [DefaultValue(false)]
-      public bool BlockedProcessPeport { get; set; }
+      public bool BlockedProcessReport { get; set; }
 
       [Category(@"Events")]
       [DisplayName(@"SQL:StmtStarting")]
@@ -397,7 +397,7 @@ namespace SqlProfiler {
              || ts.EventsColumns.SPStmtCompleted
              || ts.EventsColumns.SPStmtStarting
              || ts.EventsColumns.UserErrorMessage
-             || ts.EventsColumns.BlockedProcessPeport
+             || ts.EventsColumns.BlockedProcessReport
              || ts.EventsColumns.SQLStmtStarting
              || ts.EventsColumns.SQLStmtCompleted;
     }

@@ -64,7 +64,7 @@ namespace SqlProfiler {
       ParseCommandLine();
       InitLV();
 
-      var portable = new UserOption("portable", true, storeSeiingsInFileToolStripMenuItem, settings);
+      var portable = new UserOption("portable", true, storeSettingsInFileToolStripMenuItem, settings);
       portable.Changed += delegate {
         settings.IsPortable = portable.Value;
       };
@@ -718,7 +718,7 @@ namespace SqlProfiler {
           );
         }
 
-        if (m_currentsettings.EventsColumns.BlockedProcessPeport) {
+        if (m_currentsettings.EventsColumns.BlockedProcessReport) {
           m_Rdr.SetEvent(ProfilerEvents.ErrorsAndWarnings.Blockedprocessreport,
             ProfilerEventColumns.TextData,
             ProfilerEventColumns.LoginName,

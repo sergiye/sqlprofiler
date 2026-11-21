@@ -57,7 +57,7 @@
       this.copyToXlsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.mainMenu = new System.Windows.Forms.MenuStrip();
       this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.storeSeiingsInFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.storeSettingsInFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.startTraceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.mnRun = new System.Windows.Forms.ToolStripMenuItem();
       this.mnRunWithFilters = new System.Windows.Forms.ToolStripMenuItem();
@@ -375,7 +375,7 @@
       // fileToolStripMenuItem
       // 
       this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.storeSeiingsInFileToolStripMenuItem,
+            this.storeSettingsInFileToolStripMenuItem,
             this.startTraceToolStripMenuItem,
             this.pauseTraceToolStripMenuItem,
             this.stopTraceToolStripMenuItem,
@@ -391,11 +391,11 @@
       this.fileToolStripMenuItem.Size = new System.Drawing.Size(54, 30);
       this.fileToolStripMenuItem.Text = "&File";
       // 
-      // storeSeiingsInFileToolStripMenuItem
+      // storeSettingsInFileToolStripMenuItem
       // 
-      this.storeSeiingsInFileToolStripMenuItem.Name = "storeSeiingsInFileToolStripMenuItem";
-      this.storeSeiingsInFileToolStripMenuItem.Size = new System.Drawing.Size(491, 34);
-      this.storeSeiingsInFileToolStripMenuItem.Text = "Store settings in file";
+      this.storeSettingsInFileToolStripMenuItem.Name = "storeSettingsInFileToolStripMenuItem";
+      this.storeSettingsInFileToolStripMenuItem.Size = new System.Drawing.Size(491, 34);
+      this.storeSettingsInFileToolStripMenuItem.Text = "Store settings in file";
       // 
       // startTraceToolStripMenuItem
       // 
@@ -743,7 +743,7 @@
     private System.Windows.Forms.ToolStripMenuItem siteToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
-    private System.Windows.Forms.ToolStripMenuItem storeSeiingsInFileToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem storeSettingsInFileToolStripMenuItem;
     private System.Windows.Forms.ToolStripMenuItem autoScrollToolStripMenuItem;
   }
 }
