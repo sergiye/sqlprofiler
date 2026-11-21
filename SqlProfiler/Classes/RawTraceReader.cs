@@ -869,8 +869,14 @@ namespace SqlProfiler {
   }
 
   public class ProfilerEvent {
-    internal readonly Object[] m_Events = new object[65];
+    internal readonly Object[] m_Events = new object[66];
     internal ulong m_ColumnMask;
+    internal ulong m_ColumnMaskHigh;
+
+    internal void MarkSet(int columnId) {
+      if (columnId < 64) m_ColumnMask |= 1UL << columnId;
+      else m_ColumnMaskHigh |= 1UL << (columnId - 64);
+    }
 
     /*
 select 'case ProfilerEventColumns.'+Name + ':
@@ -943,7 +949,9 @@ order by Type_Name,trace_column_id
     }
 
     public bool ColumnIsSet(int columnId) {
-      return (m_ColumnMask & (1UL << columnId)) != 0;
+      return columnId < 64
+        ? (m_ColumnMask & (1UL << columnId)) != 0
+        : (m_ColumnMaskHigh & (1UL << (columnId - 64))) != 0;
     }
 
 
@@ -1127,8 +1135,8 @@ order by trace_column_id
     public bool TraceIsActive { get; private set; }
 
     public void Close() {
-      m_Reader?.Close();
       TraceIsActive = false;
+      m_Reader?.Close();
     }
 
     public RawTraceReader(SqlConnection con) {
@@ -1222,8 +1230,10 @@ order by trace_column_id
       m_Delegates[ProfilerEventColumns.PlanHandle] = evtByte;
     }
 
-    private static void SetGuidColumn(ProfilerEvent evt, int columnid) {
-      throw new NotImplementedException();
+    private void SetGuidColumn(ProfilerEvent evt, int columnid) {
+      m_Reader.GetBytes(2, 0, m_B16, 0, 16);
+      evt.m_Events[columnid] = new Guid(m_B16);
+      evt.MarkSet(columnid);
     }
 
     private void SetDateTimeColumn(ProfilerEvent evt, int columnid) {
@@ -1243,31 +1253,37 @@ order by trace_column_id
       var min = m_B16[10] | m_B16[11] << 8;
       var sec = m_B16[12] | m_B16[13] << 8;
       var msec = m_B16[14] | m_B16[15] << 8;
-      evt.m_Events[columnid] = new DateTime(year, month, day, hour, min, sec, msec);
-      evt.m_ColumnMask |= (ulong) 1 << columnid;
+      try {
+        evt.m_Events[columnid] = new DateTime(year, month, day, hour, min, sec, msec);
+      }
+      catch (ArgumentOutOfRangeException) {
+        return;
+      }
+
+      evt.MarkSet(columnid);
     }
 
     private void SetByteColumn(ProfilerEvent evt, int columnid) {
       var b = new byte[(int) m_Reader[1]];
       evt.m_Events[columnid] = b;
-      evt.m_ColumnMask |= 1UL << columnid;
+      evt.MarkSet(columnid);
     }
 
     private void SetStringColumn(ProfilerEvent evt, int columnid) {
       evt.m_Events[columnid] = Encoding.Unicode.GetString((byte[]) m_Reader[2]);
-      evt.m_ColumnMask |= 1UL << columnid;
+      evt.MarkSet(columnid);
     }
 
     private void SetIntColumn(ProfilerEvent evt, int columnid) {
       m_Reader.GetBytes(2, 0, m_B4, 0, 4);
       evt.m_Events[columnid] = ToInt32(m_B4);
-      evt.m_ColumnMask |= 1UL << columnid;
+      evt.MarkSet(columnid);
     }
 
     private void SetLongColumn(ProfilerEvent evt, int columnid) {
       m_Reader.GetBytes(2, 0, m_B8, 0, 8);
       evt.m_Events[columnid] = ToInt64(m_B8);
-      evt.m_ColumnMask |= 1UL << columnid;
+      evt.MarkSet(columnid);
     }
 
     private static long ToInt64(byte[] value) {
@@ -1294,7 +1310,7 @@ order by trace_column_id
     }
 
     public void SetEvent(int eventId, params int[] columns) {
-      var cmd = new SqlCommand
+      using var cmd = new SqlCommand
         {Connection = m_Conn, CommandText = "sp_trace_setevent", CommandType = CommandType.StoredProcedure};
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Value = TraceId;
       cmd.Parameters.Add("@eventid", SqlDbType.Int).Value = eventId;
@@ -1307,7 +1323,7 @@ order by trace_column_id
     }
 
     public void SetFilter(int columnId, int logicalOperator, int comparisonOperator, long? value) {
-      var cmd = new SqlCommand
+      using var cmd = new SqlCommand
         {Connection = m_Conn, CommandText = "sp_trace_setfilter", CommandType = CommandType.StoredProcedure};
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Value = TraceId;
       cmd.Parameters.Add("@columnid", SqlDbType.Int).Value = columnId;
@@ -1368,7 +1384,7 @@ order by trace_column_id
     }
 
     public void SetFilter(int columnId, int logicalOperator, int comparisonOperator, string value) {
-      var cmd = new SqlCommand
+      using var cmd = new SqlCommand
         {Connection = m_Conn, CommandText = "sp_trace_setfilter", CommandType = CommandType.StoredProcedure};
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Value = TraceId;
       cmd.Parameters.Add("@columnid", SqlDbType.Int).Value = columnId;
@@ -1378,7 +1394,7 @@ order by trace_column_id
         cmd.Parameters.Add("@value", SqlDbType.NVarChar).Value = DBNull.Value;
       }
       else {
-        cmd.Parameters.Add("@value", SqlDbType.NVarChar, value.Length).Value = value;
+        cmd.Parameters.Add("@value", SqlDbType.NVarChar, Math.Max(value.Length, 1)).Value = value;
       }
 
       cmd.ExecuteNonQuery();
@@ -1386,7 +1402,7 @@ order by trace_column_id
 
 
     public void CreateTrace() {
-      var cmd = new SqlCommand
+      using var cmd = new SqlCommand
         {Connection = m_Conn, CommandText = "sp_trace_create", CommandType = CommandType.StoredProcedure};
       cmd.Parameters.Add("@traceid", SqlDbType.Int).Direction = ParameterDirection.Output;
       cmd.Parameters.Add("@options", SqlDbType.Int).Value = 1;
@@ -1401,7 +1417,7 @@ order by trace_column_id
     }
 
     private void ControlTrace(SqlConnection con, int status) {
-      var cmd = new SqlCommand {
+      using var cmd = new SqlCommand {
         Connection = con, CommandText = "sp_trace_setstatus", CommandType = CommandType.StoredProcedure,
         CommandTimeout = 0
       };
@@ -1453,11 +1469,11 @@ order by trace_column_id
       if (eventClass >= 0 && eventClass < 255) {
         var evt = new ProfilerEvent();
         evt.m_Events[27] = eventClass;
-        evt.m_ColumnMask |= 1 << 27;
+        evt.MarkSet(27);
         while (Read()) {
           columnId = (int) m_Reader[0];
-          if (columnId > 64) return evt;
-          m_Delegates[columnId](evt, columnId);
+          if (columnId > 65) return evt;
+          m_Delegates[columnId]?.Invoke(evt, columnId);
         }
       }
 
