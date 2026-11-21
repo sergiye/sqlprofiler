@@ -740,7 +740,10 @@ namespace SqlProfiler {
     }
 
     private void SelectAllToolStripMenuItem_Click(object sender, EventArgs e) {
-      if (lvEvents.Focused && _session.State != ProfilingStateEnum.psProfiling) {
+      if (lvEvents.Focused) {
+        // the list must not jump to the newest event while all the events are selected
+        if (_session.State == ProfilingStateEnum.psProfiling && autoScrollToolStripMenuItem.Checked)
+          autoScrollToolStripMenuItem.Checked = false;
         SelectAllEvents(true);
       }
       else if (reTextData.Focused) {
