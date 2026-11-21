@@ -52,7 +52,7 @@ The published version can be obtained from [releases](https://github.com/sergiye
 ### Working with the captured events
  * Virtual list with thousands of events, sortable by any column (numeric columns are sorted as numbers)
  * Text data of selected events is shown in the bottom panel with T-SQL syntax highlighting; several events can be selected at once
- * Find in the "Text data" column: forward/backward search, match case, whole word, wrap around (`Ctrl+F`, `F3`)
+ * Find in the "Text data" column: forward/backward search, match case, whole word, wrap around (`Ctrl+F`, `F3`); works while the trace is running (auto scroll is switched off then)
  * Select all, delete selected, keep only selected events, clear the trace window
  * Auto scroll to the latest event
 

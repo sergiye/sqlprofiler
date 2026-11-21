@@ -707,21 +707,13 @@ namespace SqlProfiler {
     #region find
 
     private void FindToolStripMenuItem_Click(object sender, EventArgs e) {
-      if (!CanFind()) return;
       using var f = new FindForm(this);
       f.TopMost = TopMost;
       f.ShowDialog();
     }
 
     private void FindNextToolStripMenuItem_Click(object sender, EventArgs e) {
-      if (!CanFind()) return;
       PerformFind(true, WrapAround);
-    }
-
-    private bool CanFind() {
-      if (_session.State != ProfilingStateEnum.psProfiling) return true;
-      MessageBox.Show("You cannot find when trace is running", "SqlProfiler", MessageBoxButtons.OK, MessageBoxIcon.Information);
-      return false;
     }
 
     internal void PerformFind(bool forwards, bool wrapAround) {
@@ -732,6 +724,10 @@ namespace SqlProfiler {
           MessageBoxButtons.OK, MessageBoxIcon.Information);
         return;
       }
+
+      // the list must not jump to the newest event right after the found one is selected
+      if (_session.State == ProfilingStateEnum.psProfiling && autoScrollToolStripMenuItem.Checked)
+        autoScrollToolStripMenuItem.Checked = false;
 
       SelectAllEvents(false);
       FocusRow(index, true);
