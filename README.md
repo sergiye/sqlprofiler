@@ -12,7 +12,7 @@ Distribution package contains standalone portable (can be used without installat
 
 Here's a preview of the app's UI running on Windows 10:
 
-[<img src="https://github.com/sergiye/sqlprofiler/raw/master/preview.png" alt="preview" width="300"/>](https://github.com/sergiye/sqlprofiler/raw/master/preview.png)
+[<img src="https://github.com/sergiye/sqlprofiler/raw/master/preview.png" alt="preview" width="700"/>](https://github.com/sergiye/sqlprofiler/raw/master/preview.png)
 
 ## Download Latest Version
 
